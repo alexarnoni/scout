@@ -1,0 +1,22 @@
+# env
+.env
+*.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# node
+node_modules/
+dist/
+
+# misc
+.DS_Store
+Thumbs.db
+
+# Dados sensíveis
+backend/cookies.txt
+backend/data/*.json

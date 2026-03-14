@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: scout-postgres
+    environment:
+      POSTGRES_DB: scout
+      POSTGRES_USER: scout
+      POSTGRES_PASSWORD: scout
+    ports:
+      - "5433:5432"
+    volumes:
+      - scout_pgdata:/var/lib/postgresql/data
+
+volumes:
+  scout_pgdata:

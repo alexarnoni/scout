@@ -1,0 +1,83 @@
+{
+  "competition": {
+    "name": "Paulistao",
+    "season": "2026",
+    "external_ids": {
+      "fpf": "paulistao-2026"
+    }
+  },
+  "teams": [
+    {
+      "name": "Corinthians",
+      "external_ids": {
+        "fpf": "corinthians"
+      },
+      "staff": [
+        {
+          "name": "Antonio Oliveira",
+          "role": "tecnico"
+        }
+      ],
+      "players": [
+        {
+          "name": "Yuri Alberto",
+          "position": "FW",
+          "number": 9
+        },
+        {
+          "name": "Cassio",
+          "position": "GK",
+          "number": 12
+        }
+      ]
+    },
+    {
+      "name": "Palmeiras",
+      "external_ids": {
+        "fpf": "palmeiras"
+      },
+      "staff": [
+        {
+          "name": "Abel Ferreira",
+          "role": "tecnico"
+        }
+      ],
+      "players": [
+        {
+          "name": "Raphael Veiga",
+          "position": "MF",
+          "number": 23
+        },
+        {
+          "name": "Weverton",
+          "position": "GK",
+          "number": 21
+        }
+      ]
+    },
+    {
+      "name": "Sao Paulo",
+      "external_ids": {
+        "fpf": "sao-paulo"
+      },
+      "staff": [
+        {
+          "name": "Luis Zubeldia",
+          "role": "tecnico"
+        }
+      ],
+      "players": [
+        {
+          "name": "Lucas Moura",
+          "position": "FW",
+          "number": 7
+        },
+        {
+          "name": "Rafael",
+          "position": "GK",
+          "number": 23
+        }
+      ]
+    }
+  ]
+}
