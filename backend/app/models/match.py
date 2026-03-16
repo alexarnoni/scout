@@ -15,7 +15,7 @@ class Match(Base, TimestampMixin, SourceIdsMixin):
     competition_id: Mapped[int] = mapped_column(
         ForeignKey("competitions.id"), nullable=False
     )
-    round_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    round_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     match_date_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )

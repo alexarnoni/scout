@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload
 
@@ -8,6 +9,7 @@ from app.models import (
     Competition,
     Match,
     Player,
+    PlayerMatchStats,
     Roster,
     Staff,
     Team,
@@ -47,8 +49,27 @@ from app.services.player_analytics import (
     get_player_radar,
     get_player_timeseries,
 )
+from app.services.scout import get_scout_ranking, POSITION_GROUPS
+from app.providers.sportdb import (
+    get_last_match_event_id,
+    get_match_lineup,
+    get_team_slug,
+    get_season_results,
+    get_standings,
+    get_match_stats as fetch_match_stats,
+    get_team_season_averages,
+    get_player_profile,
+    get_player_market_value,
+)
+from app.schemas.scout import PlayerScoutCard, ScoutRanking
 
 app = FastAPI(title="Scout API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(api_router)
 
 
@@ -124,6 +145,51 @@ def get_match_or_404(db: Session, match_id: int) -> Match:
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
     return match
+
+
+@app.get("/teams/{team_id}/last_lineup", response_model=list[PlayerOut])
+def get_team_last_lineup(
+    team_id: int,
+    competition_id: int,
+    db: Session = Depends(get_db),
+) -> list[Player]:
+    get_team_or_404(db, team_id)
+
+    last_match = db.execute(
+        select(Match)
+        .where(
+            or_(Match.home_team_id == team_id, Match.away_team_id == team_id),
+            Match.competition_id == competition_id,
+            Match.status == 'finished',
+        )
+        .order_by(Match.match_date_time.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    if not last_match:
+        return []
+
+    player_stats = db.execute(
+        select(PlayerMatchStats)
+        .where(
+            PlayerMatchStats.match_id == last_match.id,
+            PlayerMatchStats.team_id == team_id,
+            PlayerMatchStats.minutes > 0,
+        )
+    ).scalars().all()
+
+    player_ids = [ps.player_id for ps in player_stats]
+
+    if not player_ids:
+        return []
+
+    players = db.execute(
+        select(Player)
+        .where(Player.id.in_(player_ids))
+        .order_by(Player.name)
+    ).scalars().all()
+
+    return players
 
 
 @app.get("/competitions", response_model=list[CompetitionOut])
@@ -293,6 +359,37 @@ def get_team_squad(team_id: int, db: Session = Depends(get_db)) -> dict:
     return {"team": team, "players": players, "staff": staff_members}
 
 
+@app.get("/teams/{team_id}/next_fixture")
+def get_next_fixture(team_id: int, db: Session = Depends(get_db)) -> dict:
+    team = get_team_or_404(db, team_id)
+    slug = get_team_slug(team.name or "")
+    if not slug:
+        raise HTTPException(status_code=404, detail="Slug não encontrado")
+
+    try:
+        fixtures = get_season_fixtures()
+        for match in fixtures:
+            home = match.get("homeParticipantNameUrl", "")
+            away = match.get("awayParticipantNameUrl", "")
+            if slug in (home, away):
+                import datetime
+                ts = int(match.get("startUtime", 0))
+                dt = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone(datetime.timedelta(hours=-3)))
+                return {
+                    "event_id": match.get("eventId"),
+                    "date": dt.strftime("%a, %d %b · %H:%M"),
+                    "competition": "Brasileirão Série A",
+                    "home_name": match.get("homeFirstName", ""),
+                    "away_name": match.get("awayFirstName", ""),
+                    "home_logo": f"https://static.flashscore.com/res/image/data/{match.get('homeLogo','')}",
+                    "away_logo": f"https://static.flashscore.com/res/image/data/{match.get('awayLogo','')}",
+                    "venue": "",
+                }
+    except Exception:
+        pass
+    raise HTTPException(status_code=404, detail="Sem próximo jogo")
+
+
 @app.get("/teams/{team_id}/radar")
 def get_team_radar(
     team_id: int, window: str = "season", db: Session = Depends(get_db)
@@ -411,3 +508,213 @@ def get_team_analytics_timeseries(
 ) -> list[dict]:
     get_team_in_competition_or_404(db, team_id, competition_id)
     return get_team_timeseries(db, team_id, competition_id)
+
+
+VALID_POSITIONS = {"Goleiro", "Defensor", "Meio-campo", "Atacante"}
+
+
+@app.get("/standings")
+def get_competition_standings() -> list[dict]:
+    data = get_standings()
+    return [
+        {
+            "rank": t["rank"],
+            "teamId": t["teamId"],
+            "teamName": t["teamName"],
+            "teamSlug": t["teamSlug"],
+            "points": int(t["points"]),
+            "matches": int(t["matches"]),
+            "wins": int(t["wins"]),
+            "draws": int(t["draws"]),
+            "losses": int(t["lossesRegular"]),
+            "goals": t["goals"],
+            "goalDiff": int(t["goalDiff"]),
+            "rankClass": t.get("rankClass", ""),
+            "form": [e["eventSymbol"] for e in t.get("events", []) if e.get("eventType") != "upcoming"][:5],
+        }
+        for t in data
+    ]
+
+
+@app.get("/teams/{team_id}/flashscore_lineup")
+def get_flashscore_lineup(
+    team_id: int,
+    db: Session = Depends(get_db),
+) -> dict:
+    team = get_team_or_404(db, team_id)
+    slug = get_team_slug(team.name or "")
+    if not slug:
+        raise HTTPException(status_code=404, detail=f"Slug não encontrado: {team.name}")
+
+    results = get_season_results()
+    event_id = None
+    is_home = True
+    for match in results:
+        if match.get("homeParticipantNameUrl") == slug:
+            event_id = match.get("eventId")
+            is_home = True
+            break
+        elif match.get("awayParticipantNameUrl") == slug:
+            event_id = match.get("eventId")
+            is_home = False
+            break
+
+    if not event_id:
+        raise HTTPException(status_code=404, detail="Nenhuma partida encontrada")
+
+    lineup = get_match_lineup(event_id)
+    side = "home" if is_home else "away"
+    other = "away" if is_home else "home"
+
+    players = lineup.get(side, [])
+    formation = ""
+    if players:
+        formation = (players[0].get("formation", "") or "").replace("1-", "")
+
+    try:
+        raw_stats = fetch_match_stats(event_id)
+        match_period = next((p for p in raw_stats if p["period"] == "Match"), None)
+        stats = {}
+        if match_period:
+            STAT_MAP = {
+                "Ball possession": "possession",
+                "Total shots": "shots",
+                "Shots on target": "shots_on_target",
+                "Expected goals (xG)": "xg",
+                "Corner kicks": "corners",
+                "Passes": "passes",
+                "Fouls": "fouls",
+                "Yellow cards": "yellow_cards",
+            }
+            for s in match_period["stats"]:
+                key = STAT_MAP.get(s["statName"])
+                if key and key not in stats:
+                    stats[key] = {
+                        "home": s["homeValue"],
+                        "away": s["awayValue"],
+                    }
+    except Exception as e:
+        print(f"Stats error: {e}")
+        stats = {}
+
+    return {
+        "event_id": event_id,
+        "side": side,
+        "formation": formation,
+        "starters": players,
+        "bench": lineup.get(other, []),
+        "match_stats": stats,
+        "is_home": is_home,
+    }
+
+
+@app.get("/teams/{team_id}/season_averages")
+def get_team_season_averages_endpoint(
+    team_id: int,
+    db: Session = Depends(get_db),
+) -> dict:
+    team = get_team_or_404(db, team_id)
+    slug = get_team_slug(team.name or "")
+    if not slug:
+        raise HTTPException(status_code=404, detail="Slug não encontrado")
+    return get_team_season_averages(slug)
+
+
+@app.get("/player/flashscore/{player_slug}/{player_id}")
+def get_flashscore_player(player_slug: str, player_id: str) -> dict:
+    try:
+        data = get_player_profile(player_slug, player_id)
+        league_2026 = next(
+            (c for c in data.get("careers", {}).get("league", [])
+             if c.get("season") == "2026" and c.get("competitionSlug") == "serie-a-betano"),
+            None
+        )
+        stats_2026 = {}
+        if league_2026:
+            for s in league_2026.get("stats", []):
+                stats_2026[s["name"]] = s["value"]
+        return {
+            "name": f"{data.get('firstName', '')} {data.get('lastName', '')}".strip(),
+            "photo": data.get("photo", ""),
+            "market_value": data.get("marketValue", ""),
+            "dob": data.get("dob", ""),
+            "position": data.get("position", ""),
+            "country": data.get("countryName", ""),
+            "status": data.get("playerStatus", ""),
+            "rating_2026": stats_2026.get("Rating", 0),
+            "goals_2026": stats_2026.get("Goals Scored", 0),
+            "assists_2026": stats_2026.get("Assists", 0),
+            "matches_2026": stats_2026.get("Matches Played", 0),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/scout/ranking", response_model=list[ScoutRanking])
+def scout_ranking(
+    competition_id: int,
+    position: str,
+    min_minutes: int = 180,
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    if position not in VALID_POSITIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid position. Must be one of: {', '.join(sorted(VALID_POSITIONS))}",
+        )
+    get_competition_or_404(db, competition_id)
+    return get_scout_ranking(db, competition_id, position, min_minutes)
+
+
+@app.get("/scout/moneyball")
+def scout_moneyball(
+    competition_id: int,
+    position: str,
+    min_minutes: int = 180,
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    import re
+    if position not in VALID_POSITIONS:
+        raise HTTPException(status_code=400, detail="Invalid position")
+    get_competition_or_404(db, competition_id)
+    ranking = get_scout_ranking(db, competition_id, position, min_minutes)
+    result = []
+    for p in ranking[:20]:
+        mv_str = get_player_market_value(p["player_name"])
+        mv_num = None
+        if mv_str:
+            match = re.search(r'[\d.]+', mv_str.replace(',', '.'))
+            if match:
+                val = float(match.group())
+                if 'k' in mv_str.lower():
+                    val /= 1000
+                mv_num = val
+        moneyball = round(p["score"] / mv_num, 2) if mv_num and mv_num > 0 else None
+        result.append({**p, "market_value": mv_str, "market_value_m": mv_num, "moneyball_score": moneyball})
+    result.sort(key=lambda x: x["moneyball_score"] or 0, reverse=True)
+    return result
+
+
+@app.get("/scout/player/{player_id}", response_model=PlayerScoutCard)
+def scout_player_card(
+    player_id: int,
+    competition_id: int,
+    min_minutes: int = 180,
+    db: Session = Depends(get_db),
+) -> dict:
+    player = get_player_in_competition_or_404(db, player_id, competition_id)
+    position_group = POSITION_GROUPS.get(player.position or "")
+    if position_group is None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Player position '{player.position}' is not rankable.",
+        )
+    ranking = get_scout_ranking(db, competition_id, position_group, min_minutes)
+    entry = next((r for r in ranking if r["player_id"] == player_id), None)
+    if entry is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Player not found in ranking (insufficient minutes or no stats).",
+        )
+    rank = next(i + 1 for i, r in enumerate(ranking) if r["player_id"] == player_id)
+    return {**entry, "rank": rank}

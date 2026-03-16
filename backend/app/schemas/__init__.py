@@ -109,7 +109,7 @@ class MatchOut(BaseModel):
 
     id: int
     competition_id: int
-    round_number: int
+    round_number: int | None = None
     match_date_time: datetime
     status: str
     score_home: int | None = None

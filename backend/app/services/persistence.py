@@ -1,22 +1,16 @@
+"""
+Camada de persistência compartilhada entre scripts de sincronização.
+
+Todas as funções de upsert e parsing de stats vivem aqui para evitar
+duplicação entre sync_date.py, backfill.py e outros scripts futuros.
+"""
 from __future__ import annotations
 
-import argparse
 from datetime import datetime
-from pathlib import Path
 
-from dotenv import load_dotenv
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select
 
-ROOT_ENV = Path(__file__).resolve().parents[2] / ".env"
-load_dotenv(ROOT_ENV)
-
-from app.core.config import DATABASE_URL
 from app.models import Match, Player, PlayerMatchStats, Team, TeamMatchStats
-from app.providers import SofaScoreProvider
-
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 def parse_datetime(value: str) -> datetime:
@@ -84,12 +78,6 @@ def extract_xg(stats_json) -> float | None:
         return None
 
     return scan(stats_json)
-
-
-def load_provider(name: str):
-    if name == "sofascore":
-        return SofaScoreProvider()
-    raise ValueError(f"Unsupported source: {name}")
 
 
 def upsert_match(db, competition_id: int, source: str, payload: dict) -> tuple[Match, bool]:
@@ -239,6 +227,7 @@ def upsert_player_stats(db, match: Match, payload: dict) -> bool:
         "yellow_cards": payload.get("yellow_cards"),
         "red_cards": payload.get("red_cards"),
         "rating": payload.get("rating"),
+        "saves": payload.get("saves"),
         "xg": payload.get("xg"),
         "xa": payload.get("xa"),
     }
@@ -290,148 +279,7 @@ def parse_player_stats(stats_payload: dict) -> dict:
         "yellow_cards": _to_int(stats_payload.get("yellow_cards")),
         "red_cards": _to_int(stats_payload.get("red_cards")),
         "rating": _to_float(stats_payload.get("rating")),
+        "saves": _to_int(stats_payload.get("saves")),
         "xg": _to_float(stats_payload.get("xg")),
         "xa": _to_float(stats_payload.get("xa")),
     }
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--competition-id", type=int, required=True)
-    parser.add_argument("--round", type=int, required=True)
-    parser.add_argument("--source", type=str, default="sofascore")
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--verbose", action="store_true")
-    parser.add_argument("--include-players", nargs="?", const="true", default="false")
-    args = parser.parse_args()
-
-    include_players = str(args.include_players).lower() in {"1", "true", "yes", "y"}
-
-    provider = load_provider(args.source)
-    payload = provider.fetch_round(args.competition_id, args.round)
-
-    inserted_matches = 0
-    updated_matches = 0
-    inserted_stats = 0
-    updated_stats = 0
-    skipped_stats = 0
-    inserted_player_stats = 0
-    updated_player_stats = 0
-
-    with SessionLocal() as db:
-        for match_payload in payload.get("matches", []):
-            match_payload["round"] = args.round
-            match, created = upsert_match(
-                db, args.competition_id, args.source, match_payload
-            )
-            if created:
-                inserted_matches += 1
-            else:
-                updated_matches += 1
-
-            if match.status != "finished":
-                skipped_stats += 1
-                continue
-
-            for stats_payload in match_payload.get("team_stats", []):
-                team = db.execute(
-                    select(Team).where(
-                        Team.competition_id == args.competition_id,
-                        Team.name == stats_payload["team_name"],
-                    )
-                ).scalar_one_or_none()
-                if not team:
-                    raise ValueError(f"Team not found: {stats_payload['team_name']}")
-                stats_payload["team_id"] = team.id
-                stats_payload["xg"] = extract_xg(stats_payload)
-                if args.verbose:
-                    if stats_payload["xg"] is not None:
-                        print(
-                            "xg found:",
-                            f"match_id={match.id}",
-                            f"team_id={team.id}",
-                            f"xg={stats_payload['xg']}",
-                        )
-                    else:
-                        print(
-                            "xg missing:",
-                            f"match_id={match.id}",
-                            f"team_id={team.id}",
-                        )
-
-                stats_created = upsert_team_stats(db, match, stats_payload)
-                if stats_created:
-                    inserted_stats += 1
-                else:
-                    updated_stats += 1
-
-            if include_players:
-                for player_payload in match_payload.get("player_stats", []):
-                    team = db.execute(
-                        select(Team).where(
-                            Team.competition_id == args.competition_id,
-                            Team.name == player_payload["team_name"],
-                        )
-                    ).scalar_one_or_none()
-                    if not team:
-                        raise ValueError(
-                            f"Team not found: {player_payload['team_name']}"
-                        )
-
-                    player = None
-                    external_id = player_payload.get("player_external_id")
-                    if external_id:
-                        player = db.execute(
-                            select(Player).where(
-                                Player.external_ids["sofascore"].as_string()
-                                == external_id
-                            )
-                        ).scalar_one_or_none()
-
-                    if not player:
-                        player = db.execute(
-                            select(Player).where(
-                                Player.team_id == team.id,
-                                Player.name == player_payload["player_name"],
-                            )
-                        ).scalar_one_or_none()
-
-                    if not player:
-                        if args.verbose:
-                            print(
-                                "player missing:",
-                                f"match_id={match.id}",
-                                f"team_id={team.id}",
-                                f"name={player_payload['player_name']}",
-                            )
-                        continue
-
-                    parsed_stats = parse_player_stats(player_payload.get("stats", {}))
-                    parsed_stats["team_id"] = team.id
-                    parsed_stats["player"] = player
-
-                    created_player = upsert_player_stats(db, match, parsed_stats)
-                    if created_player:
-                        inserted_player_stats += 1
-                    else:
-                        updated_player_stats += 1
-
-        if args.dry_run:
-            db.rollback()
-        else:
-            db.commit()
-
-    print(
-        "Summary: "
-        f"matches_inserted={inserted_matches} "
-        f"matches_updated={updated_matches} "
-        f"stats_inserted={inserted_stats} "
-        f"stats_updated={updated_stats} "
-        f"stats_skipped={skipped_stats} "
-        f"player_stats_inserted={inserted_player_stats} "
-        f"player_stats_updated={updated_player_stats}"
-    )
-
-
-if __name__ == "__main__":
-    main()

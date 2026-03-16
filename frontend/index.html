@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scout — Brasileirão 2026</title>
+<style>
+:root {
+  --bg-deep: #0e1117;
+  --bg-mid: #080b10;
+  --bg-panel: #060e14;
+  --border: #1c2333;
+  --border-light: #162032;
+  --text-primary: #f0f4f8;
+  --text-secondary: #cdd5e0;
+  --text-muted: #6b7a90;
+  --accent: #22c55e;
+  --accent-dim: #0d2d1f;
+  --accent-border: #166534;
+  --def: #60a5fa;
+  --mid: #a78bfa;
+  --fwd: #fb923c;
+  --win: #22c55e;
+  --draw: #f59e0b;
+  --loss: #ef4444;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--bg-deep); color: var(--text-primary); font-family: system-ui, -apple-system, sans-serif; font-size: 14px; }
+a { color: inherit; text-decoration: none; }
+
+/* ── HEADER ── */
+#header {
+  background: #080b10;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.header-brand { font-size: 13px; font-weight: 700; color: var(--text-primary); letter-spacing: -.2px; }
+.header-brand span { color: var(--accent); margin-right: 6px; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.header-nav { display: flex; gap: 4px; }
+.nav-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 12px; color: var(--text-muted); padding: 5px 12px;
+  border-radius: 6px; transition: background .15s, color .15s;
+}
+.nav-btn:hover { background: var(--border); color: var(--text-primary); }
+.nav-btn.active { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+
+/* ── LAYOUT ── */
+#app { display: flex; height: calc(100vh - 45px); overflow: hidden; }
+#sidebar {
+  width: 200px; min-width: 200px; background: var(--bg-mid);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  overflow: hidden;
+}
+#main { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg-deep); }
+
+/* ── SIDEBAR ── */
+.sidebar-header { padding: 16px 14px 10px; border-bottom: 1px solid var(--border); }
+.sidebar-brand { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: .08em; text-transform: uppercase; }
+.sidebar-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 2px; }
+.sidebar-search { padding: 10px 10px 6px; }
+.sidebar-search input {
+  width: 100%; background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text-primary); padding: 6px 10px; font-size: 12px; outline: none;
+}
+.sidebar-search input::placeholder { color: var(--text-muted); }
+.sidebar-search input:focus { border-color: var(--accent-border); }
+#team-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+.team-item {
+  display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+  cursor: pointer; border-left: 2px solid transparent; transition: background .15s;
+}
+.team-item:hover { background: rgba(255,255,255,.04); }
+.team-item.active { border-left-color: var(--accent); background: var(--accent-dim); }
+.team-item img { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
+.team-item span { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── MAIN EMPTY STATE ── */
+#empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--text-muted); gap: 10px;
+}
+#empty-state svg { opacity: .3; }
+#empty-state p { font-size: 15px; }
+
+/* ── SKELETON ── */
+.skeleton { background: var(--border); border-radius: 6px; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
+
+/* ── HERO ── */
+#profile { padding: 0; }
+.hero {
+  background: linear-gradient(160deg, var(--accent-dim) 0%, var(--bg-deep) 60%);
+  border-bottom: 1px solid var(--border); padding: 28px 32px 22px;
+  display: flex; align-items: center; gap: 20px;
+}
+.hero img { width: 72px; height: 72px; object-fit: contain; }
+.hero-info { flex: 1; }
+.hero-name { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+.hero-city { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.hero-badges { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.badge {
+  font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px;
+  border: 1px solid var(--border); color: var(--text-secondary); background: var(--bg-panel);
+}
+.badge.green { border-color: var(--accent-border); color: var(--accent); background: var(--accent-dim); }
+
+/* ── KPIs ── */
+.section { padding: 20px 32px; border-bottom: 1px solid var(--border); }
+.section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.kpi-grid-secondary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.kpi-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 10px; text-align: center; }
+.kpi-value { font-size: 22px; font-weight: 700; }
+.kpi-label { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.kpi-green .kpi-value { color: var(--win); }
+.kpi-red .kpi-value { color: var(--loss); }
+
+/* ── RESULTS ── */
+.results-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.result-pill {
+  display: flex; align-items: center; gap: 6px; padding: 5px 12px;
+  border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid;
+}
+.result-pill.W { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); color: var(--win); }
+.result-pill.D { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.3); color: var(--draw); }
+.result-pill.L { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); color: var(--loss); }
+.result-pill .score { font-size: 13px; }
+.result-pill .opp { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+
+/* ── SQUAD GRID ── */
+.squad-grid { display: flex; flex-direction: column; gap: 16px; max-width: 420px; }
+.field-wrap { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; max-width: 420px; width: 100%; }
+.field-header { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+.field-header span { color: var(--text-primary); font-weight: 600; }
+svg#field { display: block; width: 100%; height: auto; }
+
+/* player nodes */
+.p-circle { cursor: pointer; }
+.p-name { font-size: 6.5px; fill: var(--text-secondary); text-anchor: middle; }
+.p-abbr { font-size: 7px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; }
+
+/* ── BENCH ── */
+.bench-list { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; }
+.bench-item { display: flex; align-items: center; gap: 6px; padding: 2px 10px; border-bottom: 1px solid var(--border-light); }
+.bench-item:last-child { border-bottom: none; }
+.bench-num { font-size: 10px; color: var(--text-muted); width: 20px; text-align: right; flex-shrink: 0; }
+.bench-name { font-size: 11px; color: var(--text-secondary); flex: 1; }
+.bench-pos { font-size: 9px; padding: 1px 5px; border-radius: 4px; font-weight: 600; flex-shrink: 0; }
+.pos-GK  { background: rgba(34,197,94,.15);  color: var(--accent); }
+.pos-DEF { background: rgba(96,165,250,.15); color: var(--def); }
+.pos-MID { background: rgba(167,139,250,.15);color: var(--mid); }
+.pos-FWD { background: rgba(251,146,60,.15); color: var(--fwd); }
+.gem-tag { font-size: 10px; }
+
+/* ── STANDINGS TABLE ── */
+.standings-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.standings-table th { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; padding: 4px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+.standings-table th:first-child, .standings-table th:nth-child(2) { text-align: left; }
+.standings-table td { padding: 4px 6px; text-align: center; color: var(--text-secondary); border-bottom: 1px solid var(--border-light); cursor: pointer; }
+.standings-table td:first-child { color: var(--text-muted); width: 18px; }
+.standings-table td:nth-child(2) { text-align: left; color: var(--text-primary); }
+.standings-table tr:hover td { background: rgba(255,255,255,.03); }
+.standings-table tr.active td { background: var(--accent-dim); }
+.standings-table tr.active td:nth-child(2) { color: var(--accent); }
+.rank-q1 td:first-child { border-left: 2px solid #22c55e; }
+.rank-q2 td:first-child { border-left: 2px solid #3b82f6; }
+.rank-r1 td:first-child { border-left: 2px solid #ef4444; }
+.form-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin: 0 1px; }
+.form-W { background: #22c55e; }
+.form-D { background: #f59e0b; }
+.form-L { background: #ef4444; }
+
+/* ── MOBILE ── */
+#sidebar-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; background: none; border: none; color: var(--text-primary); padding: 4px; }
+@media (max-width: 767px) {
+  #sidebar {
+    position: fixed; top: 45px; left: 0; height: calc(100vh - 45px);
+    z-index: 100; transform: translateX(-100%); transition: transform .25s ease;
+    width: 200px !important; min-width: 200px !important;
+  }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-overlay {
+    display: none; position: fixed; inset: 0; top: 45px;
+    background: rgba(0,0,0,.6); z-index: 99;
+  }
+  #sidebar-overlay.open { display: block; }
+  #app { height: calc(100vh - 45px); }
+  #team-list, .sidebar-search { display: block; }
+  #mobile-select-wrap { display: none; }
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .kpi-grid-secondary { grid-template-columns: repeat(3, 1fr); }
+  .squad-grid { grid-template-columns: 1fr; }
+  .section { padding: 16px; }
+  .hero { padding: 16px; }
+}
+@media (min-width: 768px) { #mobile-select-wrap { display: none; } }
+
+.stats-radar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.player-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.player-modal { background: var(--bg-mid); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 340px; max-width: 90vw; position: relative; }
+.player-modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; }
+.player-modal-header { display: flex; gap: 16px; align-items: center; margin-bottom: 16px; }
+.player-modal-photo { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--border); }
+.player-modal-info h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.player-modal-info p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+.player-modal-value { font-size: 13px; font-weight: 600; color: var(--accent); margin-top: 4px; }
+.player-modal-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.player-modal-stat { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; }
+.player-modal-stat .val { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.player-modal-stat .lbl { font-size: 9px; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; }
+#ranking-page { padding: 24px 32px; max-width: 1200px; }
+.ranking-filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.ranking-filter-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 14px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+.ranking-filter-btn.active { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
+.ranking-table { width: 100%; border-collapse: collapse; }
+.ranking-table th { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.ranking-table th.right { text-align: right; }
+.ranking-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+.ranking-table tr:hover td { background: rgba(255,255,255,.02); cursor: pointer; }
+.rank-num { font-size: 13px; color: var(--text-muted); width: 32px; }
+.rank-num.gold { color: #f59e0b; font-weight: 700; }
+.rank-num.silver { color: #94a3b8; font-weight: 700; }
+.rank-num.bronze { color: #b45309; font-weight: 700; }
+.player-cell { display: flex; align-items: center; gap: 10px; }
+.player-cell img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--border); }
+.player-cell-info { display: flex; flex-direction: column; }
+.player-cell-name { font-size: 13px; color: var(--text-primary); font-weight: 600; }
+.player-cell-team { font-size: 11px; color: var(--text-muted); }
+.score-bar { display: flex; align-items: center; gap: 8px; }
+.score-bar-outer { width: 80px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.score-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+.score-val { font-size: 13px; font-weight: 700; color: var(--text-primary); width: 32px; text-align: right; }
+.joia-tag { font-size: 9px; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); border-radius: 3px; padding: 1px 5px; margin-left: 4px; }
+.mv-val { font-size: 12px; color: var(--text-secondary); text-align: right; }
+.rating-val { font-size: 13px; font-weight: 600; text-align: right; }
+.ranking-empty { padding: 40px; text-align: center; color: var(--text-muted); font-size: 14px; }
+.analysis-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
+.next-match-panel { display: flex; flex-direction: column; gap: 10px; }
+.nm-date { font-size: 10px; color: var(--text-muted); }
+.nm-teams { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0; }
+.nm-team { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.nm-logo { width: 32px; height: 32px; background: var(--border); border-radius: 6px; overflow: hidden; }
+.nm-logo img { width: 100%; height: 100%; object-fit: contain; }
+.nm-name { font-size: 11px; color: var(--text-primary); text-align: center; }
+.nm-vs { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+.nm-venue { font-size: 10px; color: var(--text-muted); text-align: center; }
+.h2h-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.h2h-label { font-size: 10px; color: var(--text-muted); width: 70px; flex-shrink: 0; }
+.h2h-bars { flex: 1; display: flex; gap: 2px; height: 14px; }
+.h2h-w { background: var(--accent-dim); color: var(--accent); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+.h2h-d { background: #1a1a08; color: #f59e0b; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+.h2h-l { background: #2d0d0d; color: var(--loss); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+.stats-section { margin-top: 16px; max-width: 500px; }
+.stats-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+.stats-tab { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; font-size: 11px; color: var(--text-muted); cursor: pointer; }
+.stats-tab.active { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
+.stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.stat-label { font-size: 10px; color: var(--text-muted); width: 110px; flex-shrink: 0; }
+.stat-bar-outer { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.stat-bar-inner { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s ease; }
+.stat-val { font-size: 11px; font-weight: 600; color: var(--text-secondary); width: 50px; text-align: right; flex-shrink: 0; }
+.radar-wrap { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; max-width: 420px; margin-top: 16px; }
+#team-radar { max-height: 220px; }
+</style>
+</head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<body>
+
+<header id="header">
+  <div class="header-brand" id="sidebar-toggle" onclick="toggleSidebar()"><span>SCOUT</span>Brasileirão 2026</div>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <nav class="header-nav">
+    <button class="nav-btn active" onclick="showPage('teams')">Times</button>
+    <button class="nav-btn" onclick="showPage('ranking')">Ranking</button>
+    <button class="nav-btn" onclick="showPage('about')">Sobre</button>
+  </nav>
+</header>
+
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">Scout</div>
+      <div class="sidebar-title">Brasileirão 2026</div>
+    </div>
+    <div class="sidebar-search" style="display:none">
+      <input id="search" type="text" placeholder="Buscar time…" autocomplete="off" />
+    </div>
+    <div id="team-list"></div>
+  </aside>
+
+  <!-- MOBILE SELECT -->
+  <div id="mobile-select-wrap" style="display:none">
+    <select id="mobile-select" style="width:100%;background:var(--bg-panel);border:1px solid var(--border);color:var(--text-primary);padding:8px 10px;border-radius:6px;font-size:13px;">
+      <option value="">Selecione um time…</option>
+    </select>
+  </div>
+
+  <!-- MAIN -->
+  <main id="main">
+    <div id="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+      </svg>
+      <p>Selecione um time na sidebar</p>
+    </div>
+    <div id="profile" style="display:none"></div>
+  </main>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8000';
+
+// ── position helpers ──────────────────────────────────────────────────────
+const POS_GROUP = {
+  'Goalkeeper': 'GK',
+  'Defender': 'DEF', 'Center Defender': 'DEF', 'Center Left Defender': 'DEF',
+  'Center Right Defender': 'DEF', 'Left Back': 'DEF', 'Right Back': 'DEF',
+  'Midfielder': 'MID', 'Center Midfielder': 'MID', 'Center Left Midfielder': 'MID',
+  'Center Right Midfielder': 'MID', 'Left Midfielder': 'MID', 'Right Midfielder': 'MID',
+  'Defensive Midfielder': 'MID',
+  'Attacking Midfielder': 'AMF', 'Attacking Midfielder Left': 'AMF', 'Attacking Midfielder Right': 'AMF',
+  'Forward': 'FWD', 'Center Left Forward': 'FWD', 'Center Right Forward': 'FWD',
+  'Left Forward': 'FWD', 'Right Forward': 'FWD',
+};
+const GROUP_ORDER = ['GK','DEF','MID','AMF','FWD'];
+const GROUP_COLOR = { GK:'#22c55e', DEF:'#60a5fa', MID:'#a78bfa', AMF:'#e879f9', FWD:'#fb923c' };
+const GROUP_ABBR  = { GK:'GOL', DEF:'DEF', MID:'MEI', AMF:'MEA', FWD:'ATA' };
+const POS_LABEL   = { GK:'Goleiro', DEF:'Defensor', MID:'Meio-campo', AMF:'Meia Ata.', FWD:'Atacante' };
+
+function posGroup(pos) { return POS_GROUP[pos] || null; }
+
+// ── state ─────────────────────────────────────────────────────────────────
+let competitionId = null;
+let allTeams = [];
+let selectedTeamId = null;
+
+// ── init ──────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const comps = await api('/competitions');
+    const comp = comps.find(c => /brasileir/i.test(c.name)) || comps[0];
+    if (!comp) return;
+    competitionId = comp.id;
+    await loadStandings();
+  } catch(e) { console.error('Init failed', e); }
+}
+
+// ── standings ─────────────────────────────────────────────────────────────
+async function loadStandings() {
+  const list = document.getElementById('team-list');
+  list.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:11px">Carregando...</div>';
+  try {
+    const standings = await api('/standings');
+    allTeams = standings;
+
+    const mob = document.getElementById('mobile-select');
+    mob.innerHTML = '<option value="">Selecione um time…</option>';
+
+    list.innerHTML = `
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Time</th>
+            <th>Pts</th>
+            <th>J</th>
+          </tr>
+        </thead>
+        <tbody id="standings-body"></tbody>
+      </table>`;
+
+    const tbody = document.getElementById('standings-body');
+    standings.forEach(t => {
+      const formDots = t.form.slice(0, 5).map(s =>
+        `<span class="form-dot form-${s}"></span>`
+      ).join('');
+      const rankClass = t.rankClass ? `rank-${t.rankClass}` : '';
+      const tr = document.createElement('tr');
+      tr.className = rankClass;
+      tr.dataset.slug = t.teamSlug;
+      tr.innerHTML = `
+        <td>${t.rank}</td>
+        <td>${t.teamName}</td>
+        <td><strong>${t.points}</strong></td>
+        <td>${t.matches}</td>`;
+      tr.addEventListener('click', () => selectTeamBySlug(t.teamSlug, t.teamName));
+      tbody.appendChild(tr);
+
+      const opt = document.createElement('option');
+      opt.value = t.teamSlug;
+      opt.textContent = t.teamName;
+      mob.appendChild(opt);
+    });
+  } catch(e) {
+    list.innerHTML = '<div style="padding:12px;color:var(--loss);font-size:11px">Erro ao carregar tabela</div>';
+    console.error(e);
+  }
+}
+
+// ── select team by slug ───────────────────────────────────────────────────
+const SLUG_TO_NAME = {
+  'sao-paulo': 'São Paulo', 'palmeiras': 'Palmeiras', 'flamengo-rj': 'Flamengo',
+  'fluminense': 'Fluminense', 'bahia': 'Bahia', 'bragantino': 'Red Bull Bragantino',
+  'coritiba': 'Coritiba', 'athletico-pr': 'Athletico-PR', 'gremio': 'Grêmio',
+  'corinthians': 'Corinthians', 'vitoria': 'Vitória', 'mirassol': 'Mirassol',
+  'chapecoense-sc': 'Chapecoense', 'santos': 'Santos', 'atletico-mg': 'Atlético-MG',
+  'vasco': 'Vasco da Gama', 'botafogo-rj': 'Botafogo', 'remo': 'Remo',
+  'internacional': 'Internacional', 'cruzeiro': 'Cruzeiro',
+};
+
+async function selectTeamBySlug(slug, name) {
+  const teams = await api(`/competitions/${competitionId}/teams`);
+  const teamName = SLUG_TO_NAME[slug] || name;
+  const team = teams.find(t => t.name === teamName);
+  if (team) {
+    document.querySelectorAll('#standings-body tr').forEach(tr => {
+      tr.classList.toggle('active', tr.dataset.slug === slug);
+    });
+    selectTeam(team.id);
+    if (window.innerWidth < 768) toggleSidebar();
+  }
+}
+
+// ── api ───────────────────────────────────────────────────────────────────
+async function api(path, params = {}) {
+  const url = new URL(API_BASE + path);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${r.status} ${path}`);
+  return r.json();
+}
+
+// ── sidebar ───────────────────────────────────────────────────────────────
+
+document.getElementById('mobile-select').addEventListener('change', e => {
+  if (e.target.value) selectTeamBySlug(e.target.value, e.target.options[e.target.selectedIndex].text);
+});
+
+// ── select team ───────────────────────────────────────────────────────────
+async function selectTeam(id) {
+  selectedTeamId = id;
+  document.getElementById('empty-state').style.display = 'none';
+  const profile = document.getElementById('profile');
+  profile.style.display = 'block';
+  profile.innerHTML = skeletonHTML();
+  try {
+    const [summary, matches, squad, fsLineup, seasonAvgs] = await Promise.all([
+      api(`/teams/${id}/analytics/summary`, { competition_id: competitionId, window: 38 }),
+      api(`/teams/${id}/matches`),
+      api(`/teams/${id}/squad`),
+      api(`/teams/${id}/flashscore_lineup`).catch(() => null),
+      api(`/teams/${id}/season_averages`).catch(() => ({})),
+    ]);
+    const team = allTeams.find(t => t.id === id) || squad.team || {};
+    renderProfile(profile, team, summary, matches, squad, fsLineup, seasonAvgs);
+  } catch(e) {
+    profile.innerHTML = `<div class="section" style="color:var(--loss)">Erro ao carregar dados do time.</div>`;
+    console.error(e);
+  }
+}
+
+// ── skeleton ──────────────────────────────────────────────────────────────
+function skeletonHTML() {
+  return `
+  <div class="hero" style="gap:16px">
+    <div class="skeleton" style="width:72px;height:72px;border-radius:8px"></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <div class="skeleton" style="height:22px;width:55%"></div>
+      <div class="skeleton" style="height:13px;width:35%"></div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <div class="skeleton" style="height:22px;width:70px;border-radius:20px"></div>
+        <div class="skeleton" style="height:22px;width:80px;border-radius:20px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="skeleton" style="height:11px;width:80px;margin-bottom:14px"></div>
+    <div class="kpi-grid">${Array(6).fill('<div class="skeleton" style="height:70px;border-radius:8px"></div>').join('')}</div>
+  </div>
+  <div class="section">
+    <div class="skeleton" style="height:11px;width:120px;margin-bottom:14px"></div>
+    <div style="display:flex;gap:8px">${Array(5).fill('<div class="skeleton" style="height:32px;width:90px;border-radius:20px"></div>').join('')}</div>
+  </div>`;
+}
+
+// ── render profile ────────────────────────────────────────────────────────
+async function renderProfile(container, team, summary, allMatches, squad, fsLineup, seasonAvgs) {
+  const finished = allMatches
+    .filter(m => m.status === 'finished')
+    .sort((a,b) => new Date(a.match_date_time) - new Date(b.match_date_time));
+
+  const last5 = finished.slice(-5).reverse();
+
+  let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+  finished.forEach(m => {
+    const isHome = m.home_team.id === team.id;
+    const teamGoals = isHome ? m.score_home : m.score_away;
+    const oppGoals  = isHome ? m.score_away : m.score_home;
+    gf += teamGoals ?? 0;
+    ga += oppGoals  ?? 0;
+    if (teamGoals > oppGoals) wins++;
+    else if (teamGoals === oppGoals) draws++;
+    else losses++;
+  });
+  const played = finished.length;
+
+  // squad split
+  const players = squad.players || [];
+  let starters = [];
+  let formation = '—';
+
+  if (fsLineup && fsLineup.starters && fsLineup.starters.length >= 10) {
+    starters = fsLineup.starters;
+    formation = fsLineup.formation || '—';
+  }
+
+  const bench = players.filter(p => !starters.find(s =>
+    s.participantSurname && p.name && p.name.includes(s.participantSurname)
+  ));
+
+  // last round badge
+  const lastMatch = allMatches.filter(m => m.round_number != null).slice(-1)[0];
+  const roundBadge = lastMatch ? `Rodada ${lastMatch.round_number}` : '';
+
+  // record badge
+  const recordBadge = `${wins}V ${draws}E ${losses}D`;
+
+  // stats da temporada via Flashscore (últimas 5 partidas)
+  const seasonStats = seasonAvgs || {};
+
+  // stats da última partida via Flashscore
+  const lastStats = (fsLineup && fsLineup.match_stats) ? fsLineup.match_stats : {};
+  const isHome = fsLineup ? fsLineup.is_home : true;
+
+  const SEASON_STATS = [
+    { key: 'possession', label: 'Posse de bola', suffix: '%', max: 100 },
+    { key: 'shots', label: 'Chutes totais', suffix: '', max: 25 },
+    { key: 'shots_on_target', label: 'Chutes no alvo', suffix: '', max: 12 },
+    { key: 'xg', label: 'xG', suffix: '', max: 3 },
+    { key: 'corners', label: 'Escanteios', suffix: '', max: 12 },
+    { key: 'pass_accuracy', label: 'Precisão de passes', suffix: '%', max: 100 },
+    { key: 'fouls', label: 'Faltas', suffix: '', max: 25 },
+  ];
+
+  const LAST_STATS = [
+    { key: 'possession', label: 'Posse de bola', suffix: '%', max: 100 },
+    { key: 'shots', label: 'Chutes totais', suffix: '', max: 25 },
+    { key: 'shots_on_target', label: 'Chutes no alvo', suffix: '', max: 12 },
+    { key: 'xg', label: 'xG', suffix: '', max: 3 },
+    { key: 'corners', label: 'Escanteios', suffix: '', max: 12 },
+    { key: 'passes', label: 'Precisão de passes', suffix: '', max: 100 },
+    { key: 'fouls', label: 'Faltas', suffix: '', max: 25 },
+  ];
+
+  function renderStatRows(statDefs, data, isLastMatch, isHomeTeam) {
+    return statDefs.map(({ key, label, suffix, max }) => {
+      let raw = '';
+      if (isLastMatch) {
+        const entry = data[key];
+        if (!entry) return '';
+        raw = isHomeTeam ? entry.home : entry.away;
+      } else {
+        raw = data[key];
+        if (raw == null) return '';
+      }
+      const num = parseFloat(String(raw).replace('%', '').split(' ')[0]) || 0;
+      const pct = Math.min(100, Math.round(num / max * 100));
+      return '<div class="stat-row">'
+        + '<span class="stat-label">' + label + '</span>'
+        + '<div class="stat-bar-outer"><div class="stat-bar-inner" style="width:' + pct + '%"></div></div>'
+        + '<span class="stat-val">' + num + suffix + '</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  const seasonRows = renderStatRows(SEASON_STATS, seasonStats, false, isHome);
+  const lastRows = renderStatRows(LAST_STATS, lastStats, true, isHome);
+
+// busca próximo jogo
+const fixtures = await api(`/teams/${team.id}/next_fixture`).catch(() => null);
+
+const analysisHTML = `
+<div class="section">
+    <div class="analysis-grid">
+        <div>
+            <div class="section-label">Stats</div>
+            <div class="panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px">
+                <div class="stats-toggle" style="margin-bottom:10px">
+                    <button class="stats-tab active" onclick="switchStatsTab(this,'season')">Temporada</button>
+                    <button class="stats-tab" onclick="switchStatsTab(this,'last')">Última partida</button>
+                </div>
+                <div id="stats-season">${seasonRows || '<span style="color:var(--text-muted);font-size:12px">Sem dados</span>'}</div>
+                <div id="stats-last" style="display:none">${lastRows || '<span style="color:var(--text-muted);font-size:12px">Sem dados</span>'}</div>
+            </div>
+        </div>
+        <div>
+            <div class="section-label">Perfil do time</div>
+            <div class="panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px">
+                <canvas id="team-radar" height="220" style="max-width:100%"></canvas>
+            </div>
+        </div>
+        <div>
+            <div class="section-label">Próximo jogo</div>
+            <div class="panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px">
+                ${fixtures ? `
+                <div class="next-match-panel">
+                    <div class="nm-date">${fixtures.date} · ${fixtures.competition}</div>
+                    <div class="nm-teams">
+                        <div class="nm-team">
+                            <div class="nm-logo"><img src="${fixtures.home_logo}" onerror="this.style.display='none'"></div>
+                            <span class="nm-name">${fixtures.home_name}</span>
+                        </div>
+                        <span class="nm-vs">vs</span>
+                        <div class="nm-team">
+                            <div class="nm-logo"><img src="${fixtures.away_logo}" onerror="this.style.display='none'"></div>
+                            <span class="nm-name">${fixtures.away_name}</span>
+                        </div>
+                    </div>
+                    <div class="nm-venue">${fixtures.venue || ''}</div>
+                </div>` : '<span style="color:var(--text-muted);font-size:12px">Sem jogos agendados</span>'}
+            </div>
+        </div>
+    </div>
+</div>`;
+
+  container.innerHTML = `
+  <!-- HERO -->
+  <div class="hero">
+    <img src="${team.logo_url || ''}" alt="${team.name}" onerror="this.style.display='none'" />
+    <div class="hero-info">
+      <div class="hero-name">${team.name || '—'}</div>
+      <div class="hero-city">${team.city || ''}</div>
+      <div class="hero-badges">
+        <span class="badge green">${recordBadge}</span>
+        ${roundBadge ? `<span class="badge">${roundBadge}</span>` : ''}
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="section">
+    <div class="section-label">Temporada</div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-value">${played}</div><div class="kpi-label">Jogos</div></div>
+      <div class="kpi-card kpi-green"><div class="kpi-value">${wins}</div><div class="kpi-label">Vitórias</div></div>
+      <div class="kpi-card"><div class="kpi-value">${draws}</div><div class="kpi-label">Empates</div></div>
+      <div class="kpi-card kpi-red"><div class="kpi-value">${losses}</div><div class="kpi-label">Derrotas</div></div>
+      <div class="kpi-card kpi-green"><div class="kpi-value">${gf}</div><div class="kpi-label">Gols pró</div></div>
+      <div class="kpi-card kpi-red"><div class="kpi-value">${ga}</div><div class="kpi-label">Gols contra</div></div>
+    </div>
+    ${(() => {
+        const aproveitamento = played > 0 ? Math.round((wins * 3 + draws) / (played * 3) * 100) : 0;
+        const mediaGols = played > 0 ? (gf / played).toFixed(1) : '0.0';
+        const saldo = gf - ga;
+        return `
+    <div class="kpi-grid-secondary">
+      <div class="kpi-card"><div class="kpi-value">${aproveitamento}%</div><div class="kpi-label">Aproveitamento</div></div>
+      <div class="kpi-card"><div class="kpi-value">${mediaGols}</div><div class="kpi-label">Média de gols</div></div>
+      <div class="kpi-card ${saldo >= 0 ? 'kpi-green' : 'kpi-red'}"><div class="kpi-value">${saldo >= 0 ? '+' : ''}${saldo}</div><div class="kpi-label">Saldo de gols</div></div>
+    </div>`;
+      })()}
+  </div>
+
+  <!-- RESULTS -->
+  <div class="section">
+    <div class="section-label">Últimos resultados</div>
+    <div class="results-row">${last5.map(m => resultPill(m, team.id)).join('') || '<span style="color:var(--text-muted);font-size:12px">Sem partidas finalizadas</span>'}</div>
+  </div>
+
+  ${analysisHTML}
+
+  <!-- SQUAD -->
+  <div class="section" style="border-bottom:none">
+    <div class="section-label">Elenco</div>
+    <div class="squad-grid">
+      <div class="field-wrap">
+        <div class="field-header">Titulares — Formação: <span>${formation}</span></div>
+        ${fieldSVG(starters)}
+      </div>
+      <div style="max-height: 400px; overflow: hidden;">
+        <div class="section-label" style="margin-bottom:8px">Reservas</div>
+        <div class="bench-list">${bench.map(benchItem).join('') || '<div class="bench-item" style="color:var(--text-muted)">—</div>'}</div>
+      </div>
+    </div>
+  </div>`;
+
+  // radar chart
+  const avgs = seasonAvgs || {};
+  const radarCtx = document.getElementById('team-radar');
+  if (radarCtx && avgs) {
+    if (window._teamRadar) window._teamRadar.destroy();
+    const normalize = (val, max) => val != null ? Math.min(100, Math.round((val / max) * 100)) : 0;
+    window._teamRadar = new Chart(radarCtx, {
+      type: 'radar',
+      data: {
+        labels: ['Posse', 'Chutes', 'No alvo', 'xG', 'Passes %', 'Escanteios'],
+        datasets: [{
+          label: team.name,
+          data: [
+            normalize(avgs.possession, 70),
+            normalize(avgs.shots, 25),
+            normalize(avgs.shots_on_target, 12),
+            normalize(avgs.xg, 3),
+            normalize(avgs.pass_accuracy || avgs.passes, 100),
+            normalize(avgs.corners, 12),
+          ],
+          backgroundColor: 'rgba(34,197,94,0.15)',
+          borderColor: '#22c55e',
+          borderWidth: 2,
+          pointBackgroundColor: '#22c55e',
+          pointRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          r: {
+            min: 0,
+            max: 100,
+            ticks: { display: false },
+            grid: { color: '#1c2333' },
+            angleLines: { color: '#1c2333' },
+            pointLabels: { color: '#6b7a90', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+}
+
+
+// ── result pill ───────────────────────────────────────────────────────────
+function resultPill(match, teamId) {
+  const isHome = match.home_team.id === teamId;
+  const gf = isHome ? match.score_home : match.score_away;
+  const ga = isHome ? match.score_away : match.score_home;
+  const opp = isHome ? (match.away_team || {}).name : (match.home_team || {}).name;
+  let res = 'D';
+  if (gf > ga) res = 'W';
+  else if (gf < ga) res = 'L';
+  const label = { W:'V', D:'E', L:'D' }[res];
+  return `<div class="result-pill ${res}">
+    <span>${label}</span>
+    <span class="score">${gf}–${ga}</span>
+    <span class="opp">${opp || ''}</span>
+  </div>`;
+}
+
+// ── formation inference ───────────────────────────────────────────────────
+function inferFormation(starters) {
+  const counts = { GK:0, DEF:0, MID:0, FWD:0 };
+  starters.forEach(p => { const g = posGroup(p.position); if (g) counts[g]++; });
+  const parts = [counts.DEF, counts.MID, counts.FWD].filter(n => n > 0);
+  return parts.length ? parts.join('-') : '—';
+}
+
+// ── flashscore position coords ────────────────────────────────────────────
+const POS_KEY_COORDS = {
+  '1':  { x: 0.50, y: 0.88 },
+  '2':  { x: 0.82, y: 0.72 },
+  '3':  { x: 0.62, y: 0.72 },
+  '4':  { x: 0.38, y: 0.72 },
+  '5':  { x: 0.18, y: 0.72 },
+  '6':  { x: 0.50, y: 0.55 },
+  '7':  { x: 0.25, y: 0.42 },
+  '8':  { x: 0.50, y: 0.35 },
+  '9':  { x: 0.75, y: 0.42 },
+  '10': { x: 0.20, y: 0.18 },
+  '11': { x: 0.80, y: 0.18 },
+};
+
+const POS_KEY_GROUP = {
+  '1': 'GK', '2': 'DEF', '3': 'DEF', '4': 'DEF', '5': 'DEF',
+  '6': 'MID', '7': 'MID', '8': 'AMF', '9': 'MID',
+  '10': 'FWD', '11': 'FWD',
+};
+
+// ── field SVG ─────────────────────────────────────────────────────────────
+function fieldSVG(starters) {
+  const W = 220, H = 240;
+  let nodes = '';
+
+  starters.forEach(p => {
+    const key = String(p.positionKey || '');
+    const coords = POS_KEY_COORDS[key];
+    if (!coords) return;
+
+    const x = W * coords.x;
+    const y = H * coords.y;
+    const grp = POS_KEY_GROUP[key] || 'MID';
+    const color = GROUP_COLOR[grp];
+    const abbr = GROUP_ABBR[grp];
+    const shortName = (p.participantSurname || p.participantName || '').substring(0, 10);
+    const shirtNum = p.participantNumber || '';
+    const url = p.participantUrl || '';
+
+    nodes += `
+      <g class="p-circle" style="cursor:pointer" onclick="openPlayerModal('${url}')">
+        <text x="${x}" y="${y - 16}" text-anchor="middle" font-size="6" fill="#6b7a90">${shirtNum}</text>
+        <circle cx="${x}" cy="${y}" r="11" fill="${color}" fill-opacity=".25" stroke="${color}" stroke-width="1.5"/>
+        <text x="${x}" y="${y}" class="p-abbr" fill="${color}">${abbr}</text>
+        <text x="${x}" y="${y + 18}" class="p-name">${shortName}</text>
+      </g>`;
+  });
+
+  return `<svg id="field" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${W}" height="${H}" fill="var(--bg-panel)"/>
+    <rect x="10" y="10" width="${W-20}" height="${H-20}" fill="none" stroke="var(--border-light)" stroke-width="1"/>
+    <line x1="10" y1="${H/2}" x2="${W-10}" y2="${H/2}" stroke="var(--border-light)" stroke-width="1"/>
+    <circle cx="${W/2}" cy="${H/2}" r="28" fill="none" stroke="var(--border-light)" stroke-width="1"/>
+    <rect x="45" y="10" width="130" height="38" fill="none" stroke="var(--border-light)" stroke-width="1"/>
+    <rect x="45" y="${H-48}" width="130" height="38" fill="none" stroke="var(--border-light)" stroke-width="1"/>
+    <rect x="75" y="10" width="70" height="14" fill="none" stroke="var(--border-light)" stroke-width="1"/>
+    <rect x="75" y="${H-24}" width="70" height="14" fill="none" stroke="var(--border-light)" stroke-width="1"/>
+    ${nodes}
+  </svg>`;
+}
+
+// ── bench item ────────────────────────────────────────────────────────────
+function benchItem(p, i) {
+  const grp = posGroup(p.position) || '—';
+  const posClass = grp !== '—' ? `pos-${grp}` : '';
+  const posLabel = POS_LABEL[grp] || grp;
+  const url = p.participantUrl || '';
+  return `<div class="bench-item" style="cursor:pointer" onclick="openPlayerModal('${url}')">
+    <span class="bench-num">${p.shirt_number || '—'}</span>
+    <span class="bench-name">${p.name || '—'}</span>
+    <span class="bench-pos ${posClass}">${posLabel}</span>
+  </div>`;
+}
+
+// ── sidebar toggle ────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+// ── page navigation ───────────────────────────────────────────────────────
+async function showPage(page) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="showPage('${page}')"]`).classList.add('active');
+
+  const app = document.getElementById('app');
+  const about = document.getElementById('about-page');
+  let ranking = document.getElementById('ranking-page');
+
+  if (page === 'teams') {
+    app.style.display = 'flex';
+    if (ranking) ranking.style.display = 'none';
+    if (about) about.style.display = 'none';
+  } else if (page === 'ranking') {
+    app.style.display = 'none';
+    if (about) about.style.display = 'none';
+    if (!ranking) {
+      ranking = document.createElement('div');
+      ranking.id = 'ranking-page';
+      document.body.appendChild(ranking);
+    }
+    ranking.style.display = 'block';
+    await loadRanking(ranking, 'Atacante');
+  } else if (page === 'about') {
+    app.style.display = 'none';
+    if (ranking) ranking.style.display = 'none';
+    if (!about) {
+      const div = document.createElement('div');
+      div.id = 'about-page';
+      div.style.cssText = 'padding:40px;max-width:700px;margin:0 auto';
+      div.innerHTML = `<h2 style="color:var(--text-primary);font-size:20px;margin-bottom:16px">Sobre o projeto</h2><p style="color:var(--text-secondary);line-height:1.7;margin-bottom:12px">Scout Brasileirão é uma ferramenta de análise de dados para o Campeonato Brasileiro Série A 2026. O objetivo é auxiliar profissionais de futebol na identificação de talentos e análise de desempenho.</p><p style="color:var(--text-secondary);line-height:1.7;margin-bottom:12px">O modelo de scout avalia jogadores por posição usando métricas normalizadas por 90 minutos, identificando automaticamente <strong style="color:var(--accent)">Joias Escondidas</strong> — jogadores com alto score e poucos minutos jogados.</p><p style="color:var(--text-secondary);line-height:1.7;margin-bottom:24px">Dados via ESPN API e SportDB/Flashscore. Desenvolvido por Alexandre Arnoni.</p><div style="font-size:11px;color:var(--text-muted)">Stack: Python · FastAPI · PostgreSQL · Docker · JavaScript</div>`;
+      document.body.appendChild(div);
+    } else about.style.display = 'block';
+  }
+}
+
+// ── ranking ───────────────────────────────────────────────────────────────
+async function loadRanking(container, position) {
+  const POSITIONS = ['Goleiro', 'Defensor', 'Meio-campo', 'Atacante'];
+  container.innerHTML = `
+    <div style="padding:24px 32px">
+      <div class="section-label" style="margin-bottom:16px">Ranking de Jogadores</div>
+      <div class="ranking-filters">
+        ${POSITIONS.map(p => '<button class="ranking-filter-btn ' + (p === position ? 'active' : '') + '" onclick="loadRanking(document.getElementById(\'ranking-page\'), \'' + p + '\')">' + p + '</button>').join('')}
+        <button class="ranking-filter-btn" onclick="loadMoneyball(document.getElementById('ranking-page'))">💰 Moneyball</button>
+        <span style="font-size:11px;color:var(--text-muted);margin-left:8px">mín. 180 min</span>
+      </div>
+      <div id="ranking-body"><div class="ranking-empty">Carregando...</div></div>
+    </div>`;
+
+  try {
+    const players = await api('/scout/ranking', { competition_id: competitionId, position });
+    const body = document.getElementById('ranking-body');
+
+    if (!players.length) {
+      body.innerHTML = '<div class="ranking-empty">Nenhum jogador encontrado.</div>';
+      return;
+    }
+
+    const rows = players.map((p, i) => {
+      const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      const isJoia = p.is_hidden_gem;
+      const photo = p.photo_url || '';
+      const mv = p.market_value || '—';
+      const rating = p.flashscore_rating || '—';
+      const scoreColor = p.score >= 70 ? 'var(--accent)' : p.score >= 50 ? 'var(--draw)' : 'var(--text-secondary)';
+      const playerUrl = '/player/' + (p.player_slug || '') + '/' + (p.flashscore_id || '') + '/';
+      return '<tr onclick="openPlayerModal(\'' + playerUrl + '\')">'
+        + '<td class="rank-num ' + rankClass + '">' + (i + 1) + '</td>'
+        + '<td><div class="player-cell">'
+        + (photo ? '<img src="' + photo + '" onerror="this.style.display=\'none\'" alt="' + p.player_name + '">' : '')
+        + '<div class="player-cell-info">'
+        + '<span class="player-cell-name">' + p.player_name + (isJoia ? '<span class="joia-tag">🔍 Joia</span>' : '') + '</span>'
+        + '<span class="player-cell-team">' + p.team_name + '</span>'
+        + '</div></div></td>'
+        + '<td style="text-align:right;font-size:12px;color:var(--text-muted)">' + p.total_minutes + 'min</td>'
+        + '<td><div class="score-bar"><div class="score-bar-outer"><div class="score-bar-fill" style="width:' + p.score + '%;background:' + scoreColor + '"></div></div>'
+        + '<span class="score-val" style="color:' + scoreColor + '">' + Math.round(p.score) + '</span></div></td>'
+        + '<td class="rating-val" style="color:var(--accent)">' + rating + '</td>'
+        + '<td class="mv-val">' + mv + '</td>'
+        + '</tr>';
+    }).join('');
+
+    body.innerHTML = '<table class="ranking-table"><thead><tr>'
+      + '<th>#</th><th>Jogador</th><th class="right">Minutos</th><th>Score</th><th class="right">Rating</th><th class="right">Valor</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table>';
+  } catch(e) {
+    document.getElementById('ranking-body').innerHTML = '<div class="ranking-empty" style="color:var(--loss)">Erro ao carregar ranking.</div>';
+    console.error(e);
+  }
+}
+
+// ── moneyball ─────────────────────────────────────────────────────────────
+async function loadMoneyball(container, position = 'Todos') {
+  const POSITIONS = ['Goleiro', 'Defensor', 'Meio-campo', 'Atacante'];
+  const MB_POSITIONS = ['Todos', ...POSITIONS];
+
+  container.innerHTML = `
+    <div style="padding:24px 32px">
+      <div class="section-label" style="margin-bottom:16px">Ranking de Jogadores</div>
+      <div class="ranking-filters">
+        ${POSITIONS.map(p => `<button class="ranking-filter-btn" onclick="loadRanking(document.getElementById('ranking-page'), '${p}')">${p}</button>`).join('')}
+        <button class="ranking-filter-btn active">💰 Moneyball</button>
+      </div>
+      <div class="ranking-filters" style="margin-top:4px;margin-bottom:16px">
+        ${MB_POSITIONS.map(p => `<button class="ranking-filter-btn ${p === position ? 'active' : ''}" onclick="loadMoneyball(document.getElementById('ranking-page'), '${p}')">${p}</button>`).join('')}
+        <span style="font-size:11px;color:var(--text-muted);margin-left:8px">score ÷ valor de mercado</span>
+      </div>
+      <div id="ranking-body"><div class="ranking-empty">Calculando Moneyball... pode demorar alguns segundos.</div></div>
+    </div>`;
+
+  try {
+    let players = [];
+
+    if (position === 'Todos') {
+      const all = await Promise.all(
+        POSITIONS.map(p => api('/scout/moneyball', { competition_id: competitionId, position: p, min_minutes: 180 }).catch(() => []))
+      );
+      players = all.flat();
+    } else {
+      players = await api('/scout/moneyball', { competition_id: competitionId, position, min_minutes: 180 });
+    }
+
+    players = players
+      .filter(p => p.moneyball_score)
+      .sort((a, b) => b.moneyball_score - a.moneyball_score);
+
+    const body = document.getElementById('ranking-body');
+    if (!players.length) {
+      body.innerHTML = '<div class="ranking-empty">Nenhum jogador encontrado.</div>';
+      return;
+    }
+
+    const rows = players.map((p, i) => {
+      const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      const mb = p.moneyball_score;
+      const mbColor = mb >= 20 ? 'var(--accent)' : mb >= 10 ? 'var(--draw)' : 'var(--text-secondary)';
+      const posLabel = p.position_group || '';
+      return `<tr>
+        <td class="rank-num ${rankClass}">${i + 1}</td>
+        <td>
+          <div class="player-cell-info">
+            <span class="player-cell-name">${p.player_name}${p.is_hidden_gem ? '<span class="joia-tag">🔍 Joia</span>' : ''}</span>
+            <span class="player-cell-team">${p.team_name}${posLabel ? ' · ' + posLabel : ''}</span>
+          </div>
+        </td>
+        <td style="text-align:right;font-size:12px;color:var(--text-muted)">${p.total_minutes}min</td>
+        <td style="text-align:right;font-size:12px;color:var(--text-muted)">${Math.round(p.score)}</td>
+        <td style="text-align:right;font-size:12px;color:var(--text-muted)">${p.market_value || '—'}</td>
+        <td style="text-align:right;font-size:14px;font-weight:700;color:${mbColor}">${mb.toFixed(1)}</td>
+      </tr>`;
+    }).join('');
+
+    body.innerHTML = `
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Jogador</th>
+            <th class="right">Min</th>
+            <th class="right">Score</th>
+            <th class="right">Valor</th>
+            <th class="right">💰 Score</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('ranking-body').innerHTML = `<div class="ranking-empty" style="color:var(--loss)">Erro ao calcular Moneyball.</div>`;
+    console.error(e);
+  }
+}
+
+// ── stats tab toggle ─────────────────────────────────────────────────────
+function switchStatsTab(btn, tab) {
+  document.querySelectorAll('.stats-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('stats-season').style.display = tab === 'season' ? 'block' : 'none';
+  document.getElementById('stats-last').style.display = tab === 'last' ? 'block' : 'none';
+}
+
+// ── player modal ──────────────────────────────────────────────────────────
+async function openPlayerModal(participantUrl) {
+  const parts = (participantUrl || '').replace(/^\/player\//, '').replace(/\/$/, '').split('/');
+  if (parts.length < 2 || !parts[1]) return;
+  const [slug, id] = parts;
+
+  const existing = document.getElementById('player-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'player-modal-overlay';
+  overlay.className = 'player-modal-overlay';
+  overlay.innerHTML = `<div class="player-modal"><button class="player-modal-close" onclick="document.getElementById('player-modal-overlay').remove()">✕</button><div style="color:var(--text-muted);text-align:center;padding:20px">Carregando...</div></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  try {
+    const p = await api(`/player/flashscore/${slug}/${id}`);
+    const age = p.dob ? Math.floor((new Date() - new Date(p.dob)) / 31557600000) : '';
+    overlay.querySelector('.player-modal').innerHTML = `
+      <button class="player-modal-close" onclick="document.getElementById('player-modal-overlay').remove()">✕</button>
+      <div class="player-modal-header">
+        <img class="player-modal-photo" src="${p.photo}" onerror="this.src=''" alt="${p.name}">
+        <div class="player-modal-info">
+          <h3>${p.name}</h3>
+          <p>${p.country}${age ? ' · ' + age + ' anos' : ''}${p.position ? ' · ' + p.position : ''}</p>
+          <div class="player-modal-value">${p.market_value || '—'}</div>
+        </div>
+      </div>
+      <div class="section-label" style="margin-bottom:8px">Brasileirão 2026</div>
+      <div class="player-modal-stats">
+        <div class="player-modal-stat"><div class="val">${p.matches_2026}</div><div class="lbl">Jogos</div></div>
+        <div class="player-modal-stat"><div class="val">${p.goals_2026}</div><div class="lbl">Gols</div></div>
+        <div class="player-modal-stat"><div class="val">${p.assists_2026}</div><div class="lbl">Assist.</div></div>
+        <div class="player-modal-stat"><div class="val" style="color:var(--accent)">${p.rating_2026 || '—'}</div><div class="lbl">Rating</div></div>
+      </div>`;
+  } catch(e) {
+    overlay.querySelector('.player-modal').innerHTML = `<button class="player-modal-close" onclick="document.getElementById('player-modal-overlay').remove()">✕</button><div style="color:var(--loss);padding:20px;text-align:center">Erro ao carregar jogador</div>`;
+  }
+}
+
+// ── boot ──────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

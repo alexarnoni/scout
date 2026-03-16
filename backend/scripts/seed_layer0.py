@@ -19,12 +19,12 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def get_or_create_competition(db) -> Competition:
     competition = db.execute(
-        select(Competition).where(Competition.name == "Paulistao 2026")
+        select(Competition).where(Competition.name == "Brasileirao 2026")
     ).scalar_one_or_none()
     if competition:
         return competition
 
-    competition = Competition(name="Paulistao 2026")
+    competition = Competition(name="Brasileirao 2026")
     db.add(competition)
     db.flush()
     return competition
@@ -70,19 +70,28 @@ def ensure_roster_entries(db, competition_id: int, team: Team) -> None:
 
 def main() -> None:
     team_names = [
-        "Corinthians",
+        "Vitória",
+        "Atlético-MG",
+        "Botafogo",
+        "Flamengo",
         "Palmeiras",
-        "Sao Paulo",
+        "São Paulo",
+        "Corinthians",
         "Santos",
+        "Grêmio",
+        "Internacional",
+        "Fluminense",
+        "Vasco da Gama",
+        "Athletico-PR",
+        "Cruzeiro",
+        "Bahia",
+        "Ceará",
+        "Red Bull Bragantino",
+        "Coritiba",
+        "Remo",
+        "Chapecoense",
         "Mirassol",
-        "Novorizontino",
-        "Bragantino",
-        "Ponte Preta",
-        "Guarani",
-        "Ituano",
-        "Portuguesa",
     ]
-    # TODO: completar com a lista completa do Paulistao 2026.
 
     with SessionLocal() as db:
         competition = get_or_create_competition(db)

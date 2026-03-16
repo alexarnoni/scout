@@ -33,6 +33,7 @@ class PlayerMatchStats(Base, TimestampMixin):
     fouls_committed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     yellow_cards: Mapped[int | None] = mapped_column(Integer, nullable=True)
     red_cards: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    saves: Mapped[int | None] = mapped_column(Integer, nullable=True)
     rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     xg: Mapped[float | None] = mapped_column(Float, nullable=True)
     xa: Mapped[float | None] = mapped_column(Float, nullable=True)
