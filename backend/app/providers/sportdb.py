@@ -3,7 +3,8 @@ import threading
 import httpx
 from typing import Optional
 
-SPORTDB_API_KEY = "CLsx0jJlN234MUNWYCIXwSXWYY9QYfB9yheVwxRm"
+import os
+SPORTDB_API_KEY = os.environ.get("SPORTDB_API_KEY", "")
 SPORTDB_BASE = "https://api.sportdb.dev"
 COMPETITION_SLUG = "football/brazil:39/serie-a-betano:Yq4hUnzQ"
 
