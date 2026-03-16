@@ -4,10 +4,20 @@
 
 # python
 .venv/
+venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .pytest_cache/
 .mypy_cache/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# alembic
+backend/alembic/versions/__pycache__/
 
 # node
 node_modules/
@@ -16,7 +26,12 @@ dist/
 # misc
 .DS_Store
 Thumbs.db
+*.log
 
-# Dados sensíveis
+# dados sensíveis / locais
 backend/cookies.txt
 backend/data/*.json
+
+# ide
+.vscode/
+.idea/
