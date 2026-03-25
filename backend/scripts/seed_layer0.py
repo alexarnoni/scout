@@ -85,7 +85,6 @@ def main() -> None:
         "Athletico-PR",
         "Cruzeiro",
         "Bahia",
-        "Ceará",
         "Red Bull Bragantino",
         "Coritiba",
         "Remo",

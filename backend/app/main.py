@@ -60,6 +60,7 @@ from app.providers.sportdb import (
     get_team_season_averages,
     get_player_profile,
     get_player_market_value,
+    get_season_fixtures,
 )
 from app.schemas.scout import PlayerScoutCard, ScoutRanking
 
@@ -335,16 +336,81 @@ def get_match_stats(
     return stats
 
 
-@app.get("/teams/{team_id}/matches", response_model=list[MatchOut])
-def get_team_matches(team_id: int, db: Session = Depends(get_db)) -> list[Match]:
-    get_team_or_404(db, team_id)
+@app.get("/teams/{team_id}/matches")
+def get_team_matches(team_id: int, db: Session = Depends(get_db)) -> list[dict]:
+    team = get_team_or_404(db, team_id)
+    slug = get_team_slug(team.name or "")
+
+    try:
+        standings = get_standings()
+        team_row = next(
+            (r for r in standings if r.get("teamSlug") == slug),
+            None
+        )
+        if team_row:
+            results = []
+            for ev in team_row.get("events", []):
+                etype = ev.get("eventType", "")
+                if etype == "upcoming":
+                    continue
+                home_name = ev.get("eventHomeParticipantName", "")
+                away_name = ev.get("eventAwayParticipantName", "")
+                home_score = ev.get("eventHomeScore", "")
+                away_score = ev.get("eventAwayScore", "")
+                symbol = ev.get("eventSymbol", "")
+
+                if symbol == "?" or not home_score or not away_score:
+                    continue
+                away_name = ev.get("eventAwayParticipantName", "")
+                home_score = ev.get("eventHomeScore", "")
+                away_score = ev.get("eventAwayScore", "")
+                symbol = ev.get("eventSymbol", "")
+
+                is_home = home_name == team_row.get("teamName")
+                if is_home:
+                    opponent = away_name
+                    gf = int(home_score) if home_score else 0
+                    ga = int(away_score) if away_score else 0
+                else:
+                    opponent = home_name
+                    gf = int(away_score) if away_score else 0
+                    ga = int(home_score) if home_score else 0
+
+                if symbol == "W":
+                    result = "W"
+                elif symbol == "L":
+                    result = "L"
+                else:
+                    result = "D"
+
+                results.append({
+                    "opponent": opponent,
+                    "goals_for": gf,
+                    "goals_against": ga,
+                    "result": result,
+                    "is_home": is_home,
+                })
+            return results
+    except Exception:
+        pass
+
+    # fallback ESPN
     matches = db.execute(
         select(Match)
         .where(or_(Match.home_team_id == team_id, Match.away_team_id == team_id))
         .options(joinedload(Match.home_team), joinedload(Match.away_team))
         .order_by(Match.match_date_time.desc())
     ).scalars().all()
-    return matches
+    return [
+        {
+            "opponent": (m.away_team.name if m.home_team_id == team_id else m.home_team.name) or "",
+            "goals_for": (m.score_home if m.home_team_id == team_id else m.score_away) or 0,
+            "goals_against": (m.score_away if m.home_team_id == team_id else m.score_home) or 0,
+            "result": "",
+            "is_home": m.home_team_id == team_id,
+        }
+        for m in matches if m.status == "finished"
+    ]
 
 
 @app.get("/teams/{team_id}/squad", response_model=TeamSquadOut)
@@ -367,22 +433,26 @@ def get_next_fixture(team_id: int, db: Session = Depends(get_db)) -> dict:
         raise HTTPException(status_code=404, detail="Slug não encontrado")
 
     try:
-        fixtures = get_season_fixtures()
+        import datetime
+        try:
+            fixtures = get_season_fixtures()
+        except Exception as e:
+            raise HTTPException(status_code=404, detail="Sem próximo jogo")
+        now_ts = int(datetime.datetime.now().timestamp())
         for match in fixtures:
             home = match.get("homeParticipantNameUrl", "")
             away = match.get("awayParticipantNameUrl", "")
-            if slug in (home, away):
-                import datetime
-                ts = int(match.get("startUtime", 0))
-                dt = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone(datetime.timedelta(hours=-3)))
+            start = int(match.get("startUtime", 0))
+            if slug in (home, away) and start > now_ts:
+                dt = datetime.datetime.fromtimestamp(start, tz=datetime.timezone(datetime.timedelta(hours=-3)))
                 return {
                     "event_id": match.get("eventId"),
                     "date": dt.strftime("%a, %d %b · %H:%M"),
                     "competition": "Brasileirão Série A",
                     "home_name": match.get("homeFirstName", ""),
                     "away_name": match.get("awayFirstName", ""),
-                    "home_logo": f"https://static.flashscore.com/res/image/data/{match.get('homeLogo','')}",
-                    "away_logo": f"https://static.flashscore.com/res/image/data/{match.get('awayLogo','')}",
+                    "home_logo": match.get("homeLogo", ""),
+                    "away_logo": match.get("awayLogo", ""),
                     "venue": "",
                 }
     except Exception:
@@ -454,25 +524,45 @@ def get_team_radar(
     return {"team_id": team_id, "window": window, "metrics": metrics}
 
 
-@app.get("/teams/{team_id}/analytics/summary", response_model=TeamAnalyticsSummary)
+@app.get("/teams/{team_id}/analytics/summary")
 def get_team_analytics_summary(
     team_id: int,
     competition_id: int,
-    window: int = 5,
+    window: int = 10,
     db: Session = Depends(get_db),
 ) -> dict:
-    get_team_in_competition_or_404(db, team_id, competition_id)
-    last_matches = get_last_matches(db, team_id, competition_id, window)
-    averages = get_team_averages(db, team_id, competition_id, window)
-    trend = get_team_trend(db, team_id, competition_id, window)
-    return {
-        "team_id": team_id,
-        "competition_id": competition_id,
-        "window": window,
-        "averages": averages,
-        "trend": trend,
-        "last_matches": last_matches,
-    }
+    team = get_team_or_404(db, team_id)
+    slug = get_team_slug(team.name or "")
+
+    # tenta buscar da SportDB primeiro
+    try:
+        standings = get_standings()
+        team_row = next(
+            (r for r in standings if r.get("teamSlug") == slug),
+            None
+        )
+        if team_row:
+            goals = team_row.get("goals", "0:0").split(":")
+            gf = int(goals[0]) if len(goals) > 0 else 0
+            ga = int(goals[1]) if len(goals) > 1 else 0
+            played = int(team_row.get("matches", 0) or 0)
+            wins = int(team_row.get("wins", 0) or 0)
+            draws = int(team_row.get("draws", 0) or 0)
+            losses = int(team_row.get("lossesRegular", 0) or 0)
+            return {
+                "played": played,
+                "wins": wins,
+                "draws": draws,
+                "losses": losses,
+                "goals_for": gf,
+                "goals_against": ga,
+                "averages": {},
+            }
+    except Exception:
+        pass
+
+    # fallback simples
+    raise HTTPException(status_code=404, detail="Dados não disponíveis")
 
 
 @app.get("/teams/{team_id}/analytics/radar", response_model=TeamRadar)
@@ -563,10 +653,14 @@ def get_flashscore_lineup(
         raise HTTPException(status_code=404, detail="Nenhuma partida encontrada")
 
     lineup = get_match_lineup(event_id)
-    side = "home" if is_home else "away"
-    other = "away" if is_home else "home"
+    starters_group = lineup.get("starters", {})
+    subs_group = lineup.get("subs", {})
 
-    players = lineup.get(side, [])
+    side = "home" if is_home else "away"
+
+    players = starters_group.get(side, [])
+    bench_players = subs_group.get(side, [])
+
     formation = ""
     if players:
         formation = (players[0].get("formation", "") or "").replace("1-", "")
@@ -593,8 +687,7 @@ def get_flashscore_lineup(
                         "home": s["homeValue"],
                         "away": s["awayValue"],
                     }
-    except Exception as e:
-        print(f"Stats error: {e}")
+    except Exception:
         stats = {}
 
     return {
@@ -602,7 +695,7 @@ def get_flashscore_lineup(
         "side": side,
         "formation": formation,
         "starters": players,
-        "bench": lineup.get(other, []),
+        "bench": bench_players,
         "match_stats": stats,
         "is_home": is_home,
     }

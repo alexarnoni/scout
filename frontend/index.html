@@ -110,21 +110,21 @@ a { color: inherit; text-decoration: none; }
 .badge.green { border-color: var(--accent-border); color: var(--accent); background: var(--accent-dim); }
 
 /* ── KPIs ── */
-.section { padding: 20px 32px; border-bottom: 1px solid var(--border); }
-.section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+.section { padding: 24px 36px; border-bottom: 1px solid var(--border); }
+.section-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 14px; }
 .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 .kpi-grid-secondary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-.kpi-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 10px; text-align: center; }
-.kpi-value { font-size: 22px; font-weight: 700; }
-.kpi-label { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.kpi-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 12px; text-align: center; }
+.kpi-value { font-size: 32px; font-weight: 800; }
+.kpi-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .kpi-green .kpi-value { color: var(--win); }
 .kpi-red .kpi-value { color: var(--loss); }
 
 /* ── RESULTS ── */
 .results-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .result-pill {
-  display: flex; align-items: center; gap: 6px; padding: 5px 12px;
-  border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid;
+  display: flex; align-items: center; gap: 6px; padding: 6px 14px;
+  border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid;
 }
 .result-pill.W { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); color: var(--win); }
 .result-pill.D { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.3); color: var(--draw); }
@@ -133,7 +133,9 @@ a { color: inherit; text-decoration: none; }
 .result-pill .opp { font-size: 11px; font-weight: 400; color: var(--text-muted); }
 
 /* ── SQUAD GRID ── */
-.squad-grid { display: flex; flex-direction: column; gap: 16px; max-width: 420px; }
+.squad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; max-width: 900px; }
+.bench-section { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.bench-section-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; padding: 10px 14px; border-bottom: 1px solid var(--border); }
 .field-wrap { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; max-width: 420px; width: 100%; }
 .field-header { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
 .field-header span { color: var(--text-primary); font-weight: 600; }
@@ -148,8 +150,8 @@ svg#field { display: block; width: 100%; height: auto; }
 .bench-list { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; }
 .bench-item { display: flex; align-items: center; gap: 6px; padding: 2px 10px; border-bottom: 1px solid var(--border-light); }
 .bench-item:last-child { border-bottom: none; }
-.bench-num { font-size: 10px; color: var(--text-muted); width: 20px; text-align: right; flex-shrink: 0; }
-.bench-name { font-size: 11px; color: var(--text-secondary); flex: 1; }
+.bench-num { font-size: 11px; color: var(--text-muted); width: 20px; text-align: right; flex-shrink: 0; }
+.bench-name { font-size: 12px; color: var(--text-secondary); flex: 1; }
 .bench-pos { font-size: 9px; padding: 1px 5px; border-radius: 4px; font-weight: 600; flex-shrink: 0; }
 .pos-GK  { background: rgba(34,197,94,.15);  color: var(--accent); }
 .pos-DEF { background: rgba(96,165,250,.15); color: var(--def); }
@@ -158,10 +160,10 @@ svg#field { display: block; width: 100%; height: auto; }
 .gem-tag { font-size: 10px; }
 
 /* ── STANDINGS TABLE ── */
-.standings-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.standings-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .standings-table th { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; padding: 4px 6px; text-align: center; border-bottom: 1px solid var(--border); }
 .standings-table th:first-child, .standings-table th:nth-child(2) { text-align: left; }
-.standings-table td { padding: 4px 6px; text-align: center; color: var(--text-secondary); border-bottom: 1px solid var(--border-light); cursor: pointer; }
+.standings-table td { padding: 6px 8px; text-align: center; color: var(--text-secondary); border-bottom: 1px solid var(--border-light); cursor: pointer; }
 .standings-table td:first-child { color: var(--text-muted); width: 18px; }
 .standings-table td:nth-child(2) { text-align: left; color: var(--text-primary); }
 .standings-table tr:hover td { background: rgba(255,255,255,.03); }
@@ -213,14 +215,14 @@ svg#field { display: block; width: 100%; height: auto; }
 .player-modal-stat { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; }
 .player-modal-stat .val { font-size: 18px; font-weight: 700; color: var(--text-primary); }
 .player-modal-stat .lbl { font-size: 9px; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; }
-#ranking-page { padding: 24px 32px; max-width: 1200px; }
+#ranking-page { padding: 24px 32px; max-width: 1200px; overflow-y: auto; height: calc(100vh - 45px); }
 .ranking-filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
 .ranking-filter-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 14px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
 .ranking-filter-btn.active { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
 .ranking-table { width: 100%; border-collapse: collapse; }
-.ranking-table th { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.ranking-table th { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
 .ranking-table th.right { text-align: right; }
-.ranking-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+.ranking-table td { padding: 12px 14px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
 .ranking-table tr:hover td { background: rgba(255,255,255,.02); cursor: pointer; }
 .rank-num { font-size: 13px; color: var(--text-muted); width: 32px; }
 .rank-num.gold { color: #f59e0b; font-weight: 700; }
@@ -229,24 +231,24 @@ svg#field { display: block; width: 100%; height: auto; }
 .player-cell { display: flex; align-items: center; gap: 10px; }
 .player-cell img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--border); }
 .player-cell-info { display: flex; flex-direction: column; }
-.player-cell-name { font-size: 13px; color: var(--text-primary); font-weight: 600; }
-.player-cell-team { font-size: 11px; color: var(--text-muted); }
+.player-cell-name { font-size: 15px; color: var(--text-primary); font-weight: 600; }
+.player-cell-team { font-size: 12px; color: var(--text-muted); }
 .score-bar { display: flex; align-items: center; gap: 8px; }
 .score-bar-outer { width: 80px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .score-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
-.score-val { font-size: 13px; font-weight: 700; color: var(--text-primary); width: 32px; text-align: right; }
+.score-val { font-size: 15px; font-weight: 700; color: var(--text-primary); width: 32px; text-align: right; }
 .joia-tag { font-size: 9px; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); border-radius: 3px; padding: 1px 5px; margin-left: 4px; }
 .mv-val { font-size: 12px; color: var(--text-secondary); text-align: right; }
 .rating-val { font-size: 13px; font-weight: 600; text-align: right; }
 .ranking-empty { padding: 40px; text-align: center; color: var(--text-muted); font-size: 14px; }
 .analysis-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
 .next-match-panel { display: flex; flex-direction: column; gap: 10px; }
-.nm-date { font-size: 10px; color: var(--text-muted); }
+.nm-date { font-size: 11px; color: var(--text-muted); }
 .nm-teams { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0; }
 .nm-team { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
 .nm-logo { width: 32px; height: 32px; background: var(--border); border-radius: 6px; overflow: hidden; }
 .nm-logo img { width: 100%; height: 100%; object-fit: contain; }
-.nm-name { font-size: 11px; color: var(--text-primary); text-align: center; }
+.nm-name { font-size: 13px; color: var(--text-primary); text-align: center; }
 .nm-vs { font-size: 13px; font-weight: 700; color: var(--text-muted); }
 .nm-venue { font-size: 10px; color: var(--text-muted); text-align: center; }
 .h2h-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
@@ -260,10 +262,10 @@ svg#field { display: block; width: 100%; height: auto; }
 .stats-tab { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; font-size: 11px; color: var(--text-muted); cursor: pointer; }
 .stats-tab.active { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
 .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.stat-label { font-size: 10px; color: var(--text-muted); width: 110px; flex-shrink: 0; }
-.stat-bar-outer { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.stat-label { font-size: 12px; color: var(--text-muted); width: 110px; flex-shrink: 0; }
+.stat-bar-outer { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
 .stat-bar-inner { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s ease; }
-.stat-val { font-size: 11px; font-weight: 600; color: var(--text-secondary); width: 50px; text-align: right; flex-shrink: 0; }
+.stat-val { font-size: 13px; font-weight: 600; color: var(--text-secondary); width: 50px; text-align: right; flex-shrink: 0; }
 .radar-wrap { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; max-width: 420px; margin-top: 16px; }
 #team-radar { max-height: 220px; }
 </style>
@@ -492,23 +494,35 @@ function skeletonHTML() {
 // ── render profile ────────────────────────────────────────────────────────
 async function renderProfile(container, team, summary, allMatches, squad, fsLineup, seasonAvgs) {
   const finished = allMatches
-    .filter(m => m.status === 'finished')
+    .filter(m => m.result === 'W' || m.result === 'D' || m.result === 'L')
     .sort((a,b) => new Date(a.match_date_time) - new Date(b.match_date_time));
 
-  const last5 = finished.slice(-5).reverse();
+  const last5 = finished.slice(-5);
 
-  let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
-  finished.forEach(m => {
-    const isHome = m.home_team.id === team.id;
-    const teamGoals = isHome ? m.score_home : m.score_away;
-    const oppGoals  = isHome ? m.score_away : m.score_home;
-    gf += teamGoals ?? 0;
-    ga += oppGoals  ?? 0;
-    if (teamGoals > oppGoals) wins++;
-    else if (teamGoals === oppGoals) draws++;
-    else losses++;
-  });
-  const played = finished.length;
+  // KPIs — usa summary da SportDB se disponível, senão calcula do ESPN
+  let played, wins, draws, losses, gf, ga;
+
+  if (summary && summary.played != null) {
+    played = summary.played;
+    wins = summary.wins;
+    draws = summary.draws;
+    losses = summary.losses;
+    gf = summary.goals_for;
+    ga = summary.goals_against;
+  } else {
+    wins = 0; draws = 0; losses = 0; gf = 0; ga = 0;
+    finished.forEach(m => {
+      const isHome = m.home_team.id === team.id;
+      const teamGoals = isHome ? m.score_home : m.score_away;
+      const oppGoals  = isHome ? m.score_away : m.score_home;
+      gf += teamGoals ?? 0;
+      ga += oppGoals  ?? 0;
+      if (teamGoals > oppGoals) wins++;
+      else if (teamGoals === oppGoals) draws++;
+      else losses++;
+    });
+    played = finished.length;
+  }
 
   // squad split
   const players = squad.players || [];
@@ -676,19 +690,31 @@ const analysisHTML = `
   ${analysisHTML}
 
   <!-- SQUAD -->
-  <div class="section" style="border-bottom:none">
-    <div class="section-label">Elenco</div>
-    <div class="squad-grid">
-      <div class="field-wrap">
-        <div class="field-header">Titulares — Formação: <span>${formation}</span></div>
-        ${fieldSVG(starters)}
+  ${(() => {
+    const benchHTML = fsLineup && fsLineup.bench ? fsLineup.bench.map(p => {
+      const url = p.participantUrl || '';
+      return `<div class="bench-item" style="cursor:pointer" onclick="openPlayerModal('${url}')">
+        <span class="bench-num">${p.participantNumber || ''}</span>
+        <span class="bench-name">${p.participantName || ''}</span>
+        <span style="color:var(--text-muted);font-size:10px">SUB</span>
+      </div>`;
+    }).join('') : bench.map(benchItem).join('') || '<div class="bench-item" style="color:var(--text-muted)">—</div>';
+    return `<div class="section" style="border-bottom:none">
+      <div class="section-label">Elenco</div>
+      <div class="squad-grid">
+        <div>
+          <div class="field-wrap">
+            <div class="field-header">Titulares — Formação: <span>${formation}</span></div>
+            ${fieldSVG(starters)}
+          </div>
+        </div>
+        <div class="bench-section">
+          <div class="bench-section-title">Reservas</div>
+          <div class="bench-list">${benchHTML}</div>
+        </div>
       </div>
-      <div style="max-height: 400px; overflow: hidden;">
-        <div class="section-label" style="margin-bottom:8px">Reservas</div>
-        <div class="bench-list">${bench.map(benchItem).join('') || '<div class="bench-item" style="color:var(--text-muted)">—</div>'}</div>
-      </div>
-    </div>
-  </div>`;
+    </div>`;
+  })()}`;
 
   // radar chart
   const avgs = seasonAvgs || {};
@@ -727,7 +753,7 @@ const analysisHTML = `
             ticks: { display: false },
             grid: { color: '#1c2333' },
             angleLines: { color: '#1c2333' },
-            pointLabels: { color: '#6b7a90', font: { size: 11 } }
+            pointLabels: { color: '#6b7a90', font: { size: 13 } }
           }
         }
       }
@@ -738,18 +764,15 @@ const analysisHTML = `
 
 // ── result pill ───────────────────────────────────────────────────────────
 function resultPill(match, teamId) {
-  const isHome = match.home_team.id === teamId;
-  const gf = isHome ? match.score_home : match.score_away;
-  const ga = isHome ? match.score_away : match.score_home;
-  const opp = isHome ? (match.away_team || {}).name : (match.home_team || {}).name;
-  let res = 'D';
-  if (gf > ga) res = 'W';
-  else if (gf < ga) res = 'L';
-  const label = { W:'V', D:'E', L:'D' }[res];
+  const gf = match.goals_for ?? 0;
+  const ga = match.goals_against ?? 0;
+  const res = match.result || 'D';
+  const opp = match.opponent || '';
+  const label = { W:'V', D:'E', L:'D' }[res] || 'D';
   return `<div class="result-pill ${res}">
     <span>${label}</span>
     <span class="score">${gf}–${ga}</span>
-    <span class="opp">${opp || ''}</span>
+    <span class="opp">${opp}</span>
   </div>`;
 }
 
@@ -837,6 +860,11 @@ function benchItem(p, i) {
 }
 
 // ── sidebar toggle ────────────────────────────────────────────────────────
+function toggleGarimpoInfo() {
+  const box = document.getElementById('garimpo-info-box');
+  if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebar-overlay').classList.toggle('open');
@@ -886,7 +914,7 @@ async function loadRanking(container, position) {
       <div class="section-label" style="margin-bottom:16px">Ranking de Jogadores</div>
       <div class="ranking-filters">
         ${POSITIONS.map(p => '<button class="ranking-filter-btn ' + (p === position ? 'active' : '') + '" onclick="loadRanking(document.getElementById(\'ranking-page\'), \'' + p + '\')">' + p + '</button>').join('')}
-        <button class="ranking-filter-btn" onclick="loadMoneyball(document.getElementById('ranking-page'))">💰 Moneyball</button>
+        <button class="ranking-filter-btn" onclick="loadGarimpo(document.getElementById('ranking-page'))">⛏️ Garimpo</button>
         <span style="font-size:11px;color:var(--text-muted);margin-left:8px">mín. 180 min</span>
       </div>
       <div id="ranking-body"><div class="ranking-empty">Carregando...</div></div>
@@ -934,8 +962,8 @@ async function loadRanking(container, position) {
   }
 }
 
-// ── moneyball ─────────────────────────────────────────────────────────────
-async function loadMoneyball(container, position = 'Todos') {
+// ── garimpo ─────────────────────────────────────────────────────────────
+async function loadGarimpo(container, position = 'Todos') {
   const POSITIONS = ['Goleiro', 'Defensor', 'Meio-campo', 'Atacante'];
   const MB_POSITIONS = ['Todos', ...POSITIONS];
 
@@ -944,13 +972,22 @@ async function loadMoneyball(container, position = 'Todos') {
       <div class="section-label" style="margin-bottom:16px">Ranking de Jogadores</div>
       <div class="ranking-filters">
         ${POSITIONS.map(p => `<button class="ranking-filter-btn" onclick="loadRanking(document.getElementById('ranking-page'), '${p}')">${p}</button>`).join('')}
-        <button class="ranking-filter-btn active">💰 Moneyball</button>
+        <button class="ranking-filter-btn active">⛏️ Garimpo</button>
       </div>
       <div class="ranking-filters" style="margin-top:4px;margin-bottom:16px">
-        ${MB_POSITIONS.map(p => `<button class="ranking-filter-btn ${p === position ? 'active' : ''}" onclick="loadMoneyball(document.getElementById('ranking-page'), '${p}')">${p}</button>`).join('')}
+        ${MB_POSITIONS.map(p => `<button class="ranking-filter-btn ${p === position ? 'active' : ''}" onclick="loadGarimpo(document.getElementById('ranking-page'), '${p}')">${p}</button>`).join('')}
         <span style="font-size:11px;color:var(--text-muted);margin-left:8px">score ÷ valor de mercado</span>
+        <span style="position:relative;display:inline-block;margin-left:6px">
+          <span id="garimpo-info-btn" style="cursor:pointer;font-size:12px;color:var(--text-muted);border:1px solid var(--border);border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center" onclick="toggleGarimpoInfo()">ℹ</span>
+          <div id="garimpo-info-box" style="display:none;position:absolute;top:24px;left:0;width:320px;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;color:var(--text-secondary);line-height:1.6;z-index:50">
+            <strong style="color:var(--text-primary);display:block;margin-bottom:6px">Como funciona o Garimpo?</strong>
+            O índice divide o score de scout do jogador pelo valor de mercado em milhões de euros. O score é calculado com métricas normalizadas por 90 minutos — gols, assistências, chutes, passes, duelos e mais, variando por posição.
+            <br><br>
+            Quanto maior o número, mais o jogador entrega por euro investido. Ideal pra identificar talentos subvalorizados antes do mercado perceber.
+          </div>
+        </span>
       </div>
-      <div id="ranking-body"><div class="ranking-empty">Calculando Moneyball... pode demorar alguns segundos.</div></div>
+      <div id="ranking-body"><div class="ranking-empty">Calculando Garimpo... pode demorar alguns segundos.</div></div>
     </div>`;
 
   try {
@@ -1004,13 +1041,13 @@ async function loadMoneyball(container, position = 'Todos') {
             <th class="right">Min</th>
             <th class="right">Score</th>
             <th class="right">Valor</th>
-            <th class="right">💰 Score</th>
+            <th class="right">⛏️ Score</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
   } catch(e) {
-    document.getElementById('ranking-body').innerHTML = `<div class="ranking-empty" style="color:var(--loss)">Erro ao calcular Moneyball.</div>`;
+    document.getElementById('ranking-body').innerHTML = `<div class="ranking-empty" style="color:var(--loss)">Erro ao calcular Garimpo.</div>`;
     console.error(e);
   }
 }

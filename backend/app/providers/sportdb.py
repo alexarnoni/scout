@@ -55,15 +55,30 @@ def _fetch_results(season: str = "2026", page: int = 1) -> list[dict]:
     return r.json()
 
 
+def get_season_fixtures(season: str = "2026", page: int = 1) -> list[dict]:
+    return _cached_get(f'fixtures_{season}_{page}', lambda: _fetch_fixtures(season, page))
+
+
+def _fetch_fixtures(season: str = "2026", page: int = 1) -> list[dict]:
+    url = f"{SPORTDB_BASE}/api/flashscore/{COMPETITION_SLUG}/{season}/fixtures?page={page}"
+    r = httpx.get(url, headers=HEADERS, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+
 def get_match_lineup(event_id: str) -> dict:
     url = f"{SPORTDB_BASE}/api/flashscore/match/{event_id}/lineups"
     r = httpx.get(url, headers=HEADERS, timeout=10)
     r.raise_for_status()
     data = r.json()
+    starters = {}
+    subs = {}
     for group in data:
         if group.get("group") == "Starting Lineups":
-            return group
-    return {}
+            starters = group
+        elif group.get("group") == "Substitutes":
+            subs = group
+    return {"starters": starters, "subs": subs}
 
 
 TEAM_SLUG_MAP = {
