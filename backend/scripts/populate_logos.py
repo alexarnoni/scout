@@ -4,10 +4,14 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from app.core.config import DATABASE_URL  # noqa: ensures .env is loaded
 from app.core.db import SessionLocal
 from app.models.team import Team
 
-API_KEY = "cNZlA2G81Xfh5Lpxldb1yueN1LUjvLcGuZY3KdJg"
+API_KEY = os.getenv("SPORTDB_API_KEY")
+if not API_KEY:
+    raise RuntimeError("SPORTDB_API_KEY não definida no .env")
+
 HEADERS = {"X-API-Key": API_KEY}
 BASE = "https://api.sportdb.dev"
 
