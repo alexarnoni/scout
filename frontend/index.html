@@ -219,7 +219,7 @@ svg#field { display: block; width: 100%; height: auto; }
   .analysis-grid { grid-template-columns: 1fr; }
   .stats-radar-grid { grid-template-columns: 1fr; }
   .radar-wrap { max-width: 100%; }
-  #team-radar { max-height: 200px; }
+  #team-radar { max-height: 200px; width: 100%; }
   #ranking-page { padding: 12px 12px; }
   .ranking-filters { gap: 6px; margin-bottom: 12px; }
   .ranking-filter-btn { padding: 5px 10px; font-size: 11px; }
@@ -238,6 +238,10 @@ svg#field { display: block; width: 100%; height: auto; }
   .result-pill .opp { max-width: 50px; }
 }
 @media (min-width: 768px) { #mobile-select-wrap { display: none; } .sidebar-search { display: block; } }
+@media (min-width: 768px) and (max-width: 1100px) {
+  .analysis-grid { grid-template-columns: 1fr 1fr; }
+  .analysis-grid > div:first-child { grid-column: 1 / -1; }
+}
 
 .stats-radar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 .player-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; display: flex; align-items: center; justify-content: center; }
@@ -304,7 +308,18 @@ svg#field { display: block; width: 100%; height: auto; }
 .stat-bar-inner { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s ease; }
 .stat-val { font-size: 13px; font-weight: 600; color: var(--text-secondary); width: 50px; text-align: right; flex-shrink: 0; }
 .radar-wrap { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; max-width: 420px; margin-top: 16px; }
-#team-radar { max-height: 220px; }
+#team-radar { max-height: 220px; width: 100%; display: block; }
+
+/* ── FOOTER ── */
+#footer {
+  padding: 16px 32px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 8px;
+}
+#ranking-page { padding-bottom: 32px; }
 </style>
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -358,6 +373,7 @@ svg#field { display: block; width: 100%; height: auto; }
       <p>Selecione um time na sidebar</p>
     </div>
     <div id="profile" style="display:none"></div>
+    <footer id="footer">Scout · Brasileirão 2026 · Dados via ESPN API</footer>
   </main>
 </div>
 
@@ -947,7 +963,7 @@ async function showPage(page) {
     if (!about) {
       const div = document.createElement('div');
       div.id = 'about-page';
-      div.style.cssText = 'padding:40px;max-width:700px;margin:0 auto';
+      div.style.cssText = 'padding:40px;max-width:700px;margin:0 auto;overflow-y:auto;height:calc(100vh - 45px)';
       div.innerHTML = `<h2 style="color:var(--text-primary);font-size:20px;margin-bottom:16px">Sobre o projeto</h2><p style="color:var(--text-secondary);line-height:1.7;margin-bottom:12px">Scout Brasileirão é uma ferramenta de análise de dados para o Campeonato Brasileiro Série A 2026. O objetivo é auxiliar profissionais de futebol na identificação de talentos e análise de desempenho.</p><p style="color:var(--text-secondary);line-height:1.7;margin-bottom:12px">O modelo de scout avalia jogadores por posição usando métricas normalizadas por 90 minutos, identificando automaticamente <strong style="color:var(--accent)">Joias Escondidas</strong> — jogadores com alto score e poucos minutos jogados.</p><p style="color:var(--text-secondary);line-height:1.7;margin-bottom:24px">Dados via ESPN API e SportDB/Flashscore. Desenvolvido por Alexandre Arnoni.</p><div style="font-size:11px;color:var(--text-muted)">Stack: Python · FastAPI · PostgreSQL · Docker · JavaScript</div>`;
       document.body.appendChild(div);
     } else about.style.display = 'block';
