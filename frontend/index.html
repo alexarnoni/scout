@@ -216,7 +216,6 @@ svg#field { display: block; width: 100%; height: auto; }
   .kpi-value { font-size: 22px; }
   .kpi-card { padding: 10px 6px; }
   .kpi-label { font-size: 10px; }
-  .analysis-grid { grid-template-columns: 1fr; }
   .stats-radar-grid { grid-template-columns: 1fr; }
   .radar-wrap { max-width: 100%; }
   #team-radar { max-height: 200px; width: 100%; }
@@ -238,10 +237,6 @@ svg#field { display: block; width: 100%; height: auto; }
   .result-pill .opp { max-width: 50px; }
 }
 @media (min-width: 768px) { #mobile-select-wrap { display: none; } .sidebar-search { display: block; } }
-@media (min-width: 768px) and (max-width: 1100px) {
-  .analysis-grid { grid-template-columns: 1fr 1fr; }
-  .analysis-grid > div:first-child { grid-column: 1 / -1; }
-}
 
 .stats-radar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 .player-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; display: flex; align-items: center; justify-content: center; }
@@ -283,6 +278,13 @@ svg#field { display: block; width: 100%; height: auto; }
 .rating-val { font-size: 13px; font-weight: 600; text-align: right; }
 .ranking-empty { padding: 40px; text-align: center; color: var(--text-muted); font-size: 14px; }
 .analysis-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
+@media (min-width: 768px) and (max-width: 1100px) {
+  .analysis-grid { grid-template-columns: 1fr 1fr; }
+  .analysis-grid > div:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .analysis-grid { grid-template-columns: 1fr; }
+}
 .next-match-panel { display: flex; flex-direction: column; gap: 10px; }
 .nm-date { font-size: 11px; color: var(--text-muted); }
 .nm-teams { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0; }
