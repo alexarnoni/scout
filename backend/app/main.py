@@ -67,7 +67,7 @@ from app.schemas.scout import PlayerScoutCard, ScoutRanking
 app = FastAPI(title="Scout API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://scout.alexarnoni.com"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
