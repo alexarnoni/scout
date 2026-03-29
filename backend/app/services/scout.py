@@ -23,6 +23,37 @@ METRICS_BY_POSITION = {
     "FWD": ["goals_p90", "assists_p90", "shots_p90", "shots_on_target_p90", "conversion_rate", "xg_p90", "yellow_cards_p90_inv", "avg_rating"],
 }
 
+# Alias com nomes em português para compatibilidade com testes
+GROUP_METRICS = {
+    "Goleiro": METRICS_BY_POSITION["GK"],
+    "Defensor": METRICS_BY_POSITION["DEF"],
+    "Meio-campo": METRICS_BY_POSITION["MID"],
+    "Atacante": METRICS_BY_POSITION["FWD"],
+}
+
+
+def _p90(value: float, minutes: float) -> float:
+    """Calcula valor por 90 minutos."""
+    if not minutes:
+        return 0.0
+    return value / (minutes / 90)
+
+
+def _normalize(values: list[float], inverted: bool = False) -> list[float]:
+    """Normaliza uma lista de valores para o intervalo 0-100 via min-max.
+    Se todos os valores forem iguais, retorna 50.0 para todos.
+    Se inverted=True, inverte a escala (100 - norm).
+    """
+    min_v = min(values)
+    max_v = max(values)
+    rng = max_v - min_v
+    if rng == 0:
+        return [50.0] * len(values)
+    result = [(v - min_v) / rng * 100 for v in values]
+    if inverted:
+        result = [100.0 - v for v in result]
+    return result
+
 
 def _normalize_group(players: list[dict], metrics: list[str]) -> list[dict]:
     """Normaliza métricas 0-100 por min-max dentro do grupo."""
@@ -38,9 +69,12 @@ def _normalize_group(players: list[dict], metrics: list[str]) -> list[dict]:
                 norm = 100 - norm
             p.setdefault("_norm", {})[metric] = round(norm, 1)
 
+    max_minutes = max(p.get("total_minutes", 0) for p in players) or 1
     for p in players:
         norms = p.get("_norm", {})
-        p["score"] = round(sum(norms.values()) / len(norms), 1) if norms else 0.0
+        score_raw = round(sum(norms.values()) / len(norms), 1) if norms else 0.0
+        confidence = p.get("total_minutes", 0) / max_minutes
+        p["score"] = round(score_raw * confidence, 1)
         p["metrics"] = norms
         del p["_norm"]
 
@@ -48,9 +82,9 @@ def _normalize_group(players: list[dict], metrics: list[str]) -> list[dict]:
 
 
 def get_scout_ranking(position_group: str, min_minutes: int = 180, season: str = "2026") -> list[dict]:
-    pos = POSITION_MAP.get(position_group, position_group.upper())
+    pos = POSITION_MAP.get(position_group, position_group.upper() if position_group else "")
     if pos not in METRICS_BY_POSITION:
-        raise ValueError(f"Posição inválida: {position_group}. Use GK, DEF, MID, FWD ou equivalente em PT.")
+        return []
 
     all_players = get_player_season_stats(season)
 

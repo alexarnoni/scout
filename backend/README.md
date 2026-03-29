@@ -53,6 +53,15 @@ Métricas por posição:
 
 Cache em memória: 2h para stats de temporada, 24h para stats por partida.
 
+### Score e penalização por confiança
+
+O score de cada jogador é calculado em duas etapas:
+
+1. **score_raw** — média simples das métricas normalizadas (min-max 0-100 dentro do grupo de posição)
+2. **score final** — `score_raw * confidence`, onde `confidence = total_minutes / max_minutes_do_grupo`
+
+Isso penaliza jogadores com poucos minutos (amostra pequena), evitando scores inflados. O jogador com mais minutos no grupo tem `confidence = 1.0` (sem redução). O campo `metrics` retornado por jogador sempre contém os valores pré-penalização.
+
 ## Variáveis de ambiente
 
 ```
