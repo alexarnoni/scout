@@ -26,3 +26,18 @@ ESPN API informal — sem autenticação, sem rate limit oficial.
 Endpoints usados:
 - `GET /apis/site/v2/sports/soccer/bra.1/scoreboard?dates=YYYYMMDD`
 - `GET /apis/site/v2/sports/soccer/bra.1/summary?event={id}`
+
+## Changelog
+
+### Scout / Ranking (2026-03-29)
+
+**Migração completa do ranking para SportDB em tempo real.**
+
+- Fonte do ranking: banco ESPN → SportDB ao vivo (`/api/flashscore/match/{id}/playerstats`)
+- `xg_p90` agora é real — antes sempre retornava zero. Valor vem de `expectedGoals` da SportDB
+- `avg_rating` do Flashscore (`fsRating`) adicionado como métrica para todas as posições (ATT, MID, DEF, GK)
+- `scout.py` stateless — removida dependência de sessão de banco (`db`) e `competition_id` do endpoint `/scout/ranking`
+- Corrigido mapeamento de posições PT→EN (`Atacante`→`FWD`, etc.)
+- Corrigido parsing do endpoint `/playerstats`: dados estão em `stats`, não em `players`
+- Adicionado `POSITION_KEY_MAP` para converter `positionKey` numérico da SportDB para grupos GKP/DEF/MID/FWD
+- `xg_p90` adicionado ao cálculo de métricas por temporada

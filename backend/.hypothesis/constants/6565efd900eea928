@@ -1,0 +1,4 @@
+# file: C:\projetos\scout\backend\app\models\staff.py
+# hypothesis_version: 6.151.9
+
+[100, 255, 500, 'Team', 'ix_staff_team_id', 'staff', 'staff_members', 'team_id', 'teams.id']

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class PlayerScoutCard(BaseModel):
-    player_id: int
+    player_id: str
     player_name: str
     team_name: str
     position: str
@@ -14,7 +14,7 @@ class PlayerScoutCard(BaseModel):
 
 
 class ScoutRanking(BaseModel):
-    player_id: int
+    player_id: str
     player_name: str
     team_name: str
     position: str

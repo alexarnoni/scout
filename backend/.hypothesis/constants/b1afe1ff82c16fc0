@@ -1,0 +1,4 @@
+# file: C:\projetos\scout\backend\app\models\match.py
+# hypothesis_version: 6.151.9
+
+[100, 'Competition', 'PlayerMatchStats', 'Team', 'TeamMatchStats', 'all, delete-orphan', 'away_matches', 'competition_id', 'competitions.id', 'external_id', 'external_source', 'home_matches', 'match', 'match_date_time', 'matches', 'teams.id']

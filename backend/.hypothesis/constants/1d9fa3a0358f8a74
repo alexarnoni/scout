@@ -1,0 +1,4 @@
+# file: C:\projetos\scout\backend\app\models\__init__.py
+# hypothesis_version: 6.151.9
+
+['Base', 'Competition', 'Match', 'Player', 'PlayerMatchStats', 'Roster', 'SourceIdsMixin', 'Staff', 'Team', 'TeamMatchStats', 'TimestampMixin']

@@ -49,7 +49,8 @@ from app.services.player_analytics import (
     get_player_radar,
     get_player_timeseries,
 )
-from app.services.scout import get_scout_ranking, POSITION_GROUPS
+from app.services.scout import get_scout_ranking
+from app.providers.sportdb_scout import SPORTDB_POSITION_GROUPS
 from app.providers.sportdb import (
     get_last_match_event_id,
     get_match_lineup,
@@ -745,32 +746,28 @@ def get_flashscore_player(player_slug: str, player_id: str) -> dict:
 
 @app.get("/scout/ranking", response_model=list[ScoutRanking])
 def scout_ranking(
-    competition_id: int,
     position: str,
+    season: str = "2026",
     min_minutes: int = 180,
-    db: Session = Depends(get_db),
 ) -> list[dict]:
     if position not in VALID_POSITIONS:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid position. Must be one of: {', '.join(sorted(VALID_POSITIONS))}",
         )
-    get_competition_or_404(db, competition_id)
-    return get_scout_ranking(db, competition_id, position, min_minutes)
+    return get_scout_ranking(position, min_minutes, season)
 
 
 @app.get("/scout/moneyball")
 def scout_moneyball(
-    competition_id: int,
     position: str,
+    season: str = "2026",
     min_minutes: int = 180,
-    db: Session = Depends(get_db),
 ) -> list[dict]:
     import re
     if position not in VALID_POSITIONS:
         raise HTTPException(status_code=400, detail="Invalid position")
-    get_competition_or_404(db, competition_id)
-    ranking = get_scout_ranking(db, competition_id, position, min_minutes)
+    ranking = get_scout_ranking(position, min_minutes, season)
     result = []
     for p in ranking[:20]:
         mv_str = get_player_market_value(p["player_name"])
@@ -790,19 +787,26 @@ def scout_moneyball(
 
 @app.get("/scout/player/{player_id}", response_model=PlayerScoutCard)
 def scout_player_card(
-    player_id: int,
-    competition_id: int,
+    player_id: str,
+    season: str = "2026",
     min_minutes: int = 180,
-    db: Session = Depends(get_db),
 ) -> dict:
-    player = get_player_in_competition_or_404(db, player_id, competition_id)
-    position_group = POSITION_GROUPS.get(player.position or "")
+    # Busca o jogador nos dados agregados da temporada
+    from app.providers.sportdb_scout import get_player_season_stats
+    all_players = get_player_season_stats(season, min_minutes)
+    player_data = next((p for p in all_players if p["player_id"] == player_id), None)
+    if player_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Player not found in ranking (insufficient minutes or no stats).",
+        )
+    position_group = player_data.get("position_group")
     if position_group is None:
         raise HTTPException(
             status_code=422,
-            detail=f"Player position '{player.position}' is not rankable.",
+            detail=f"Player position '{player_data.get('position')}' is not rankable.",
         )
-    ranking = get_scout_ranking(db, competition_id, position_group, min_minutes)
+    ranking = get_scout_ranking(position_group, min_minutes, season)
     entry = next((r for r in ranking if r["player_id"] == player_id), None)
     if entry is None:
         raise HTTPException(

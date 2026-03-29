@@ -1,0 +1,4 @@
+# file: C:\projetos\scout\backend\app\providers\__init__.py
+# hypothesis_version: 6.151.9
+
+['BaseProvider', 'ESPNProvider']

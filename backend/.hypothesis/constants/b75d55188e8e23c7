@@ -1,0 +1,4 @@
+# file: C:\projetos\scout\backend\app\services\persistence.py
+# hypothesis_version: 6.151.9
+
+['%', '+00:00', ',', '.', 'T', 'Z', 'assists', 'away_team', 'corners', 'date', 'duels_won', 'expected goal', 'expected goals', 'expectedGoals', 'expectedGoalsFor', 'expected_goals', 'external_id', 'fouls', 'fouls_committed', 'goals', 'home_team', 'interceptions', 'is_home', 'key_passes', 'label', 'match_id', 'minutes', 'minutes_played', 'name', 'pass_accuracy', 'passes', 'player', 'player_id', 'possession', 'rating', 'red_cards', 'round', 'saves', 'scheduled', 'score_away', 'score_home', 'shots', 'shots_on_target', 'stat', 'status', 'tackles', 'team_id', 'title', 'type', 'value', 'valueStr', 'valueText', 'xG', 'xGoals', 'xa', 'xg', 'yellow_cards']
