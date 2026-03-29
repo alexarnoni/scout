@@ -1,4 +1,0 @@
-# file: C:\projetos\scout\backend\app\providers\sportdb_scout.py
-# hypothesis_version: 6.151.9
-
-[0.0, 180, 7200, 86400, '2026', 'Atacante', 'DEF', 'Defensor', 'FWD', 'GKP', 'Goleiro', 'MID', 'Meio-campo', 'Substitutes', '_clean_sheets', '_ratings', 'assists', 'assists_p90', 'avg_rating', 'away', 'awayTeam', 'clean_sheet_rate', 'conversion_rate', 'data', 'eventId', 'event_id', 'expires', 'fouls_committed', 'fouls_p90', 'goals', 'goals_conceded', 'goals_conceded_p90', 'goals_p90', 'group', 'home', 'homeTeam', 'id', 'is_substitute', 'matches_played', 'minutes', 'minutesPlayed', 'participantId', 'participantName', 'player_id', 'player_name', 'position', 'positionKey', 'position_group', 'rating', 'red_cards', 'red_cards_p90', 'save_rate', 'saves', 'saves_p90', 'shots', 'shots_on_target', 'shots_on_target_p90', 'shots_p90', 'team_id', 'team_name', 'total_minutes', 'xg', 'yellow_cards', 'yellow_cards_p90']

@@ -35,3 +35,7 @@ backend/data/*.json
 # ide
 .vscode/
 .idea/
+.kiro/
+
+# hypothesis
+.hypothesis/

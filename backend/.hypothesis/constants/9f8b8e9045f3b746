@@ -1,4 +1,0 @@
-# file: C:\projetos\scout\backend\app\models\team.py
-# hypothesis_version: 6.151.9
-
-[120, 255, 500, 'Competition', 'Match', 'Match.away_team_id', 'Match.home_team_id', 'Player', 'PlayerMatchStats', 'Roster', 'Staff', 'TeamMatchStats', 'all, delete-orphan', 'away_team', 'competition_id', 'competitions.id', 'home_team', 'team', 'teams']

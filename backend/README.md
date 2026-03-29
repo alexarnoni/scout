@@ -6,38 +6,56 @@ FastAPI + SQLAlchemy 2.0.
 
 ```
 app/
-  core/config.py       # DATABASE_URL e settings
-  models/              # SQLAlchemy ORM models
-  providers/espn.py    # ESPN API provider (date-based)
+  core/config.py           # DATABASE_URL e settings
+  models/                  # SQLAlchemy ORM models
+  providers/espn.py        # ESPN API provider (sync histórico)
+  providers/sportdb.py     # SportDB provider (standings, fixtures, lineups)
+  providers/sportdb_scout.py  # SportDB scout provider (player stats por partida)
+  services/scout.py        # Ranking de jogadores (stateless, sem DB)
   services/persistence.py  # Funções de upsert compartilhadas
-  routers/             # Endpoints FastAPI
 scripts/
-  seed_layer0.py       # Cria competição + times
-  sync_date.py         # Sync de uma data via ESPN
-  backfill.py          # Loop de datas para backfill
-  scheduler.py         # Roda sync_date todo dia às 00:30 BRT
-alembic/               # Migrations Alembic
+  seed_layer0.py           # Cria competição + times
+  sync_date.py             # Sync de uma data via ESPN
+  backfill.py              # Loop de datas para backfill
+  scheduler.py             # Roda sync_date todo dia às 00:30 BRT
+alembic/                   # Migrations Alembic
 ```
 
 ## Fonte de dados
 
-ESPN API informal — sem autenticação, sem rate limit oficial.
+### ESPN (dados históricos persistidos)
+Usada para sync de partidas e stats de time no banco local.
 
-Endpoints usados:
+Endpoints:
 - `GET /apis/site/v2/sports/soccer/bra.1/scoreboard?dates=YYYYMMDD`
 - `GET /apis/site/v2/sports/soccer/bra.1/summary?event={id}`
 
-## Changelog
+### SportDB / Flashscore (tempo real)
+Usada para standings, fixtures, lineups e ranking de jogadores.
+Requer `SPORTDB_API_KEY` no ambiente.
 
-### Scout / Ranking (2026-03-29)
+Endpoints principais:
+- `GET /api/flashscore/{competition}/{season}/results`
+- `GET /api/flashscore/{competition}/{season}/standings`
+- `GET /api/flashscore/match/{eventId}/lineups`
+- `GET /api/flashscore/match/{eventId}/playerstats`
 
-**Migração completa do ranking para SportDB em tempo real.**
+## Scout / Ranking
 
-- Fonte do ranking: banco ESPN → SportDB ao vivo (`/api/flashscore/match/{id}/playerstats`)
-- `xg_p90` agora é real — antes sempre retornava zero. Valor vem de `expectedGoals` da SportDB
-- `avg_rating` do Flashscore (`fsRating`) adicionado como métrica para todas as posições (ATT, MID, DEF, GK)
-- `scout.py` stateless — removida dependência de sessão de banco (`db`) e `competition_id` do endpoint `/scout/ranking`
-- Corrigido mapeamento de posições PT→EN (`Atacante`→`FWD`, etc.)
-- Corrigido parsing do endpoint `/playerstats`: dados estão em `stats`, não em `players`
-- Adicionado `POSITION_KEY_MAP` para converter `positionKey` numérico da SportDB para grupos GKP/DEF/MID/FWD
-- `xg_p90` adicionado ao cálculo de métricas por temporada
+O endpoint `/scout/ranking` é **stateless** — não usa banco de dados.
+Busca resultados e stats diretamente da SportDB em tempo real.
+
+Métricas por posição:
+- **Goleiro**: save_rate, avg_rating, goals_p90_inv, yellow_cards_p90_inv
+- **Defensor**: goals_p90, assists_p90, shots_p90, fouls_p90_inv, yellow_cards_p90_inv, avg_rating
+- **Meio-campo**: goals_p90, assists_p90, shots_p90, shots_on_target_p90, fouls_p90_inv, yellow_cards_p90_inv, avg_rating
+- **Atacante**: goals_p90, assists_p90, shots_p90, shots_on_target_p90, conversion_rate, xg_p90, yellow_cards_p90_inv, avg_rating
+
+Cache em memória: 2h para stats de temporada, 24h para stats por partida.
+
+## Variáveis de ambiente
+
+```
+DATABASE_URL=postgresql://...
+SPORTDB_API_KEY=...
+```

@@ -1,4 +1,0 @@
-# file: C:\projetos\scout\backend\app\models\roster.py
-# hypothesis_version: 6.151.9
-
-['Competition', 'Player', 'Team', 'competition_id', 'competitions.id', 'ix_rosters_team_id', 'players.id', 'rosters', 'team_id', 'teams.id']

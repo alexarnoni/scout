@@ -1,4 +1,0 @@
-# file: C:\projetos\scout\backend\app\services\scout.py
-# hypothesis_version: 6.151.9
-
-[0.0, 50.0, 100, 180, '2026', 'Atacante', 'Defensor', 'Goleiro', 'Meio-campo', 'assists_p90', 'clean_sheet_rate', 'conversion_rate', 'fouls_p90', 'goals_conceded_p90', 'goals_p90', 'matches_played', 'metrics', 'player_id', 'player_name', 'position', 'position_group', 'red_cards_p90', 'saves_p90', 'score', 'shots_on_target_p90', 'shots_p90', 'team_name', 'total_minutes', 'yellow_cards_p90']

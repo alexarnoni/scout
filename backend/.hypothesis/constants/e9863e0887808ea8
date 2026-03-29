@@ -1,4 +1,0 @@
-# file: C:\projetos\scout\backend\app\models\team_match_stats.py
-# hypothesis_version: 6.151.9
-
-['Match', 'Team', 'match_id', 'matches.id', 'team_id', 'team_match_stats', 'team_stats', 'teams.id']

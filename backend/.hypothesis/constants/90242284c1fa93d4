@@ -1,4 +1,0 @@
-# file: C:\projetos\scout\backend\app\services\__init__.py
-# hypothesis_version: 6.151.9
-
-['extract_xg', 'parse_player_stats', 'upsert_match', 'upsert_player_stats', 'upsert_team_stats']
