@@ -413,37 +413,29 @@ def get_team_squad(team_id: str) -> dict:
 
 
 @app.get("/teams/{team_id}/next_fixture")
-def get_next_fixture(team_id: int, db: Session = Depends(get_db)) -> dict:
-    team = get_team_or_404(db, team_id)
-    slug = get_team_slug(team.name or "")
-    if not slug:
-        raise HTTPException(status_code=404, detail="Slug não encontrado")
-
+def get_next_fixture(team_id: str) -> dict:
+    import datetime
     try:
-        import datetime
-        try:
-            fixtures = get_season_fixtures()
-        except Exception as e:
-            raise HTTPException(status_code=404, detail="Sem próximo jogo")
-        now_ts = int(datetime.datetime.now().timestamp())
-        for match in fixtures:
-            home = match.get("homeParticipantNameUrl", "")
-            away = match.get("awayParticipantNameUrl", "")
-            start = int(match.get("startUtime", 0))
-            if slug in (home, away) and start > now_ts:
-                dt = datetime.datetime.fromtimestamp(start, tz=datetime.timezone(datetime.timedelta(hours=-3)))
-                return {
-                    "event_id": match.get("eventId"),
-                    "date": dt.strftime("%a, %d %b · %H:%M"),
-                    "competition": "Brasileirão Série A",
-                    "home_name": match.get("homeFirstName", ""),
-                    "away_name": match.get("awayFirstName", ""),
-                    "home_logo": match.get("homeLogo", ""),
-                    "away_logo": match.get("awayLogo", ""),
-                    "venue": "",
-                }
+        fixtures = get_season_fixtures()
     except Exception:
-        pass
+        raise HTTPException(status_code=404, detail="Sem próximo jogo")
+    now_ts = int(datetime.datetime.now().timestamp())
+    for match in fixtures:
+        home = match.get("homeParticipantIds", "")
+        away = match.get("awayParticipantIds", "")
+        start = int(match.get("startUtime", 0))
+        if team_id in (home, away) and start > now_ts:
+            dt = datetime.datetime.fromtimestamp(start, tz=datetime.timezone(datetime.timedelta(hours=-3)))
+            return {
+                "event_id": match.get("eventId"),
+                "date": dt.strftime("%a, %d %b · %H:%M"),
+                "competition": "Brasileirão Série A",
+                "home_name": match.get("homeFirstName", ""),
+                "away_name": match.get("awayFirstName", ""),
+                "home_logo": match.get("homeLogo", ""),
+                "away_logo": match.get("awayLogo", ""),
+                "venue": "",
+            }
     raise HTTPException(status_code=404, detail="Sem próximo jogo")
 
 
