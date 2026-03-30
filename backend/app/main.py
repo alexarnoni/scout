@@ -616,12 +616,14 @@ def get_flashscore_lineup(
     results = get_season_results()
     event_id = None
     is_home = True
-    for match in results:
-        if match.get("homeParticipantNameUrl") == slug:
+    for match in reversed(results):
+        home_id = match.get("homeParticipantIds", "")
+        away_id = match.get("awayParticipantIds", "")
+        if home_id == team_id:
             event_id = match.get("eventId")
             is_home = True
             break
-        elif match.get("awayParticipantNameUrl") == slug:
+        elif away_id == team_id:
             event_id = match.get("eventId")
             is_home = False
             break
