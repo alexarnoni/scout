@@ -369,16 +369,47 @@ def get_team_matches(team_id: str) -> list[dict]:
     return matches
 
 
-@app.get("/teams/{team_id}/squad", response_model=TeamSquadOut)
-def get_team_squad(team_id: int, db: Session = Depends(get_db)) -> dict:
-    team = get_team_or_404(db, team_id)
-    players = db.execute(
-        select(Player).where(Player.team_id == team_id).order_by(Player.name)
-    ).scalars().all()
-    staff_members = db.execute(
-        select(Staff).where(Staff.team_id == team_id).order_by(Staff.name)
-    ).scalars().all()
-    return {"team": team, "players": players, "staff": staff_members}
+@app.get("/teams/{team_id}/squad")
+def get_team_squad(team_id: str) -> dict:
+    from app.providers.sportdb_scout import get_season_results, get_match_player_stats
+
+    results = get_season_results()
+
+    team_matches = [
+        m for m in results
+        if team_id in (m.get("homeParticipantIds", ""), m.get("awayParticipantIds", ""))
+    ]
+    if not team_matches:
+        return {"team": {}, "players": [], "staff": []}
+
+    last_match = sorted(team_matches, key=lambda x: x.get("startDateTimeUtc", ""))[-1]
+    event_id = last_match.get("eventId", "")
+
+    try:
+        players_raw = get_match_player_stats(event_id)
+    except Exception:
+        return {"team": {}, "players": [], "staff": []}
+
+    team_players = [p for p in players_raw if p["team_id"] == team_id]
+
+    players = [
+        {
+            "id": p["player_id"],
+            "name": p["player_name"],
+            "position": p["position"],
+            "shirt_number": None,
+            "is_substitute": p["is_substitute"],
+        }
+        for p in team_players
+    ]
+
+    team_name = last_match.get("homeName") if last_match.get("homeParticipantIds") == team_id else last_match.get("awayName")
+
+    return {
+        "team": {"id": team_id, "name": team_name},
+        "players": players,
+        "staff": [],
+    }
 
 
 @app.get("/teams/{team_id}/next_fixture")
