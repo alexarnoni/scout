@@ -338,80 +338,35 @@ def get_match_stats(
 
 
 @app.get("/teams/{team_id}/matches")
-def get_team_matches(team_id: int, db: Session = Depends(get_db)) -> list[dict]:
-    team = get_team_or_404(db, team_id)
-    slug = get_team_slug(team.name or "")
-
-    try:
-        standings = get_standings()
-        team_row = next(
-            (r for r in standings if r.get("teamSlug") == slug),
-            None
-        )
-        if team_row:
-            results = []
-            for ev in team_row.get("events", []):
-                etype = ev.get("eventType", "")
-                if etype == "upcoming":
-                    continue
-                home_name = ev.get("eventHomeParticipantName", "")
-                away_name = ev.get("eventAwayParticipantName", "")
-                home_score = ev.get("eventHomeScore", "")
-                away_score = ev.get("eventAwayScore", "")
-                symbol = ev.get("eventSymbol", "")
-
-                if symbol == "?" or not home_score or not away_score:
-                    continue
-                away_name = ev.get("eventAwayParticipantName", "")
-                home_score = ev.get("eventHomeScore", "")
-                away_score = ev.get("eventAwayScore", "")
-                symbol = ev.get("eventSymbol", "")
-
-                is_home = home_name == team_row.get("teamName")
-                if is_home:
-                    opponent = away_name
-                    gf = int(home_score) if home_score else 0
-                    ga = int(away_score) if away_score else 0
-                else:
-                    opponent = home_name
-                    gf = int(away_score) if away_score else 0
-                    ga = int(home_score) if home_score else 0
-
-                if symbol == "W":
-                    result = "W"
-                elif symbol == "L":
-                    result = "L"
-                else:
-                    result = "D"
-
-                results.append({
-                    "opponent": opponent,
-                    "goals_for": gf,
-                    "goals_against": ga,
-                    "result": result,
-                    "is_home": is_home,
-                })
-            return results
-    except Exception:
-        pass
-
-    # fallback ESPN
-    matches = db.execute(
-        select(Match)
-        .where(or_(Match.home_team_id == team_id, Match.away_team_id == team_id))
-        .options(joinedload(Match.home_team), joinedload(Match.away_team))
-        .order_by(Match.match_date_time.desc())
-    ).scalars().all()
-    return [
-        {
-            "opponent": (m.away_team.name if m.home_team_id == team_id else m.home_team.name) or "",
-            "goals_for": (m.score_home if m.home_team_id == team_id else m.score_away) or 0,
-            "goals_against": (m.score_away if m.home_team_id == team_id else m.score_home) or 0,
-            "result": "",
-            "is_home": m.home_team_id == team_id,
-        }
-        for m in matches if m.status == "finished"
-    ]
+def get_team_matches(team_id: str) -> list[dict]:
+    from app.providers.sportdb_scout import get_season_results
+    results = get_season_results()
+    matches = []
+    for m in results:
+        home_id = m.get("homeParticipantIds", "")
+        away_id = m.get("awayParticipantIds", "")
+        if team_id not in (home_id, away_id):
+            continue
+        is_home = home_id == team_id
+        goals_for = int(m.get("homeFullTimeScore") or 0) if is_home else int(m.get("awayFullTimeScore") or 0)
+        goals_against = int(m.get("awayFullTimeScore") or 0) if is_home else int(m.get("homeFullTimeScore") or 0)
+        if goals_for > goals_against:
+            result = "W"
+        elif goals_for < goals_against:
+            result = "L"
+        else:
+            result = "D"
+        matches.append({
+            "opponent": m.get("awayName") if is_home else m.get("homeName"),
+            "goals_for": goals_for,
+            "goals_against": goals_against,
+            "result": result,
+            "is_home": is_home,
+            "round": m.get("round", ""),
+            "date": m.get("startDateTimeUtc", ""),
+        })
+    matches.sort(key=lambda x: x.get("date", ""))
+    return matches
 
 
 @app.get("/teams/{team_id}/squad", response_model=TeamSquadOut)
