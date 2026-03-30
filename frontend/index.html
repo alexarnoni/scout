@@ -539,6 +539,7 @@ async function selectTeam(id, teamMeta) {
       api(`/teams/${id}/next_fixture`).catch(() => null),
     ]);
     const team = teamMeta || allTeams.find(t => t.teamId === id) || squad.team || {};
+    if (fixtures && fixtures.team_logo) team.logo_url = fixtures.team_logo;
     renderProfile(profile, team, summary, matches, squad, fsLineup, seasonAvgs, fixtures);
   } catch(e) {
     profile.innerHTML = `<div class="section" style="color:var(--loss)">Erro ao carregar dados do time.</div>`;
@@ -725,7 +726,7 @@ const analysisHTML = `
   container.innerHTML = `
   <!-- HERO -->
   <div class="hero">
-    <img src="${team.logo_url || (fixtures && fixtures.team_logo) || ''}" alt="${team.name}" onerror="this.style.display='none'" />
+    <img src="${team.logo_url || ''}" alt="${team.name}" onerror="this.style.display='none'" />
     <div class="hero-info">
       <div class="hero-name">${team.name || '—'}</div>
       <div class="hero-city">${team.city || ''}</div>
