@@ -512,44 +512,36 @@ def get_team_radar(
 
 
 @app.get("/teams/{team_id}/analytics/summary")
-def get_team_analytics_summary(
-    team_id: int,
-    competition_id: int,
-    window: int = 10,
-    db: Session = Depends(get_db),
-) -> dict:
-    team = get_team_or_404(db, team_id)
-    slug = get_team_slug(team.name or "")
-
-    # tenta buscar da SportDB primeiro
-    try:
-        standings = get_standings()
-        team_row = next(
-            (r for r in standings if r.get("teamSlug") == slug),
-            None
-        )
-        if team_row:
-            goals = team_row.get("goals", "0:0").split(":")
-            gf = int(goals[0]) if len(goals) > 0 else 0
-            ga = int(goals[1]) if len(goals) > 1 else 0
-            played = int(team_row.get("matches", 0) or 0)
-            wins = int(team_row.get("wins", 0) or 0)
-            draws = int(team_row.get("draws", 0) or 0)
-            losses = int(team_row.get("lossesRegular", 0) or 0)
-            return {
-                "played": played,
-                "wins": wins,
-                "draws": draws,
-                "losses": losses,
-                "goals_for": gf,
-                "goals_against": ga,
-                "averages": {},
-            }
-    except Exception:
-        pass
-
-    # fallback simples
-    raise HTTPException(status_code=404, detail="Dados não disponíveis")
+def get_team_analytics_summary(team_id: str) -> dict:
+    from .providers.sportdb_scout import get_season_results
+    results = get_season_results()
+    team_matches = [
+        m for m in results
+        if team_id in (m.get("homeParticipantIds", ""), m.get("awayParticipantIds", ""))
+        and m.get("eventStage") == "FINISHED"
+    ]
+    wins = draws = losses = gf = ga = 0
+    for m in team_matches:
+        is_home = m.get("homeParticipantIds") == team_id
+        goals_for = int(m.get("homeFullTimeScore") or 0) if is_home else int(m.get("awayFullTimeScore") or 0)
+        goals_against = int(m.get("awayFullTimeScore") or 0) if is_home else int(m.get("homeFullTimeScore") or 0)
+        gf += goals_for
+        ga += goals_against
+        if goals_for > goals_against:
+            wins += 1
+        elif goals_for == goals_against:
+            draws += 1
+        else:
+            losses += 1
+    return {
+        "played": len(team_matches),
+        "wins": wins,
+        "draws": draws,
+        "losses": losses,
+        "goals_for": gf,
+        "goals_against": ga,
+        "averages": {},
+    }
 
 
 @app.get("/teams/{team_id}/analytics/radar", response_model=TeamRadar)
@@ -615,13 +607,11 @@ def get_competition_standings() -> list[dict]:
 
 @app.get("/teams/{team_id}/flashscore_lineup")
 def get_flashscore_lineup(
-    team_id: int,
-    db: Session = Depends(get_db),
+    team_id: str,
 ) -> dict:
-    team = get_team_or_404(db, team_id)
-    slug = get_team_slug(team.name or "")
+    slug = team_id
     if not slug:
-        raise HTTPException(status_code=404, detail=f"Slug não encontrado: {team.name}")
+        raise HTTPException(status_code=404, detail=f"Slug não encontrado: {team_id}")
 
     results = get_season_results()
     event_id = None
@@ -690,11 +680,9 @@ def get_flashscore_lineup(
 
 @app.get("/teams/{team_id}/season_averages")
 def get_team_season_averages_endpoint(
-    team_id: int,
-    db: Session = Depends(get_db),
+    team_id: str,
 ) -> dict:
-    team = get_team_or_404(db, team_id)
-    slug = get_team_slug(team.name or "")
+    slug = team_id
     if not slug:
         raise HTTPException(status_code=404, detail="Slug não encontrado")
     return get_team_season_averages(slug)
