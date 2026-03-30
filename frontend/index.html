@@ -141,9 +141,9 @@ a { color: inherit; text-decoration: none; }
   display: flex; align-items: center; gap: 6px; padding: 6px 14px;
   border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid;
 }
-.result-pill.W { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3); color: var(--win); }
+.result-pill.W { background: rgba(245,240,234,.08); border-color: rgba(245,240,234,.25); color: var(--win); }
 .result-pill.D { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.3); color: var(--draw); }
-.result-pill.L { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); color: var(--loss); }
+.result-pill.L { background: rgba(55,65,81,.25); border-color: rgba(55,65,81,.5); color: var(--loss); }
 .result-pill .score { font-size: 13px; }
 .result-pill .opp {
   font-size: 11px; font-weight: 400; color: var(--text-muted);
@@ -171,7 +171,7 @@ svg#field { display: block; width: 100%; height: auto; }
 .bench-num { font-size: 11px; color: var(--text-muted); width: 20px; text-align: right; flex-shrink: 0; }
 .bench-name { font-size: 12px; color: var(--text-secondary); flex: 1; }
 .bench-pos { font-size: 9px; padding: 1px 5px; border-radius: 4px; font-weight: 600; flex-shrink: 0; }
-.pos-GK  { background: rgba(34,197,94,.15);  color: var(--accent); }
+.pos-GK  { background: rgba(234,88,12,.15); color: var(--accent); }
 .pos-DEF { background: rgba(96,165,250,.15); color: var(--def); }
 .pos-MID { background: rgba(167,139,250,.15);color: var(--mid); }
 .pos-FWD { background: rgba(251,146,60,.15); color: var(--fwd); }
@@ -187,9 +187,9 @@ svg#field { display: block; width: 100%; height: auto; }
 .standings-table tr:hover td { background: rgba(255,255,255,.03); }
 .standings-table tr.active td { background: var(--accent-dim); }
 .standings-table tr.active td:nth-child(2) { color: var(--accent); }
-.rank-q1 td:first-child { border-left: 2px solid #22c55e; }
+.rank-q1 td:first-child { border-left: 2px solid var(--accent); }
 .rank-q2 td:first-child { border-left: 2px solid #3b82f6; }
-.rank-r1 td:first-child { border-left: 2px solid #ef4444; }
+.rank-r1 td:first-child { border-left: 2px solid #4b5563; }
 .form-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin: 0 1px; }
 .form-W { background: #f5f0ea; }
 .form-D { background: #f59e0b; }
@@ -429,7 +429,7 @@ const POS_GROUP = {
   'Left Forward': 'FWD', 'Right Forward': 'FWD',
 };
 const GROUP_ORDER = ['GK','DEF','MID','AMF','FWD'];
-const GROUP_COLOR = { GK:'#22c55e', DEF:'#60a5fa', MID:'#a78bfa', AMF:'#e879f9', FWD:'#fb923c' };
+const GROUP_COLOR = { GK:'#ea580c', DEF:'#60a5fa', MID:'#a78bfa', AMF:'#e879f9', FWD:'#f59e0b' };
 const GROUP_ABBR  = { GK:'GOL', DEF:'DEF', MID:'MEI', AMF:'MEA', FWD:'ATA' };
 const POS_LABEL   = { GK:'Goleiro', DEF:'Defensor', MID:'Meio-campo', AMF:'Meia Ata.', FWD:'Atacante' };
 
@@ -828,10 +828,10 @@ const analysisHTML = `
             normalize(avgs.pass_accuracy || avgs.passes, 100),
             normalize(avgs.corners, 12),
           ],
-          backgroundColor: 'rgba(34,197,94,0.15)',
-          borderColor: '#22c55e',
+          backgroundColor: 'rgba(234,88,12,0.15)',
+          borderColor: '#ea580c',
           borderWidth: 2,
-          pointBackgroundColor: '#22c55e',
+          pointBackgroundColor: '#ea580c',
           pointRadius: 3,
         }]
       },
