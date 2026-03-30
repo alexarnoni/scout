@@ -531,7 +531,7 @@ async function selectTeam(id, teamMeta) {
   profile.innerHTML = skeletonHTML();
   try {
     const [summary, matches, squad, fsLineup, seasonAvgs] = await Promise.all([
-      api(`/teams/${id}/analytics/summary`, { window: 38 }),
+      api(`/teams/${id}/analytics/summary`, { window: 38 }).catch(() => null),
       api(`/teams/${id}/matches`),
       api(`/teams/${id}/squad`),
       api(`/teams/${id}/flashscore_lineup`).catch(() => null),

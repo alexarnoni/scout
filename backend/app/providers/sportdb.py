@@ -16,7 +16,7 @@ _cache_lock = threading.Lock()
 
 def _get_cache_ttl() -> int:
     now = datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=-3)))
-    match_days = {1, 2, 3, 5, 6}
+    match_days = {0, 1, 2, 3, 5, 6}  # seg, ter, qua, sex, sáb, dom
     if now.weekday() in match_days and now.hour >= 23:
         return 1800
     return 7200
@@ -26,7 +26,7 @@ def _cached_get(key: str, fetch_fn):
     with _cache_lock:
         entry = _cache.get(key)
         now = datetime.datetime.now()
-        if entry and (now - entry['ts']).seconds < _get_cache_ttl():
+        if entry and (now - entry['ts']).total_seconds() < _get_cache_ttl():
             return entry['data']
         data = fetch_fn()
         _cache[key] = {'data': data, 'ts': now}
