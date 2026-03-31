@@ -506,7 +506,7 @@ function selectTeamFromStandings(standingsRow) {
     id: standingsRow.teamId,
     name: standingsRow.teamName,
     slug: standingsRow.teamSlug,
-    logo_url: `https://static.flashscore.com/res/image/data/${standingsRow.teamId}.png`,
+    logo_url: standingsRow.logo_url || `https://static.flashscore.com/res/image/data/${standingsRow.teamId}.png`,
     rank: standingsRow.rank,
     points: standingsRow.points,
     matches: standingsRow.matches,

@@ -596,8 +596,27 @@ VALID_POSITIONS = {"Goleiro", "Defensor", "Meio-campo", "Atacante"}
 
 
 @app.get("/standings")
-def get_competition_standings() -> list[dict]:
+def get_competition_standings(db: Session = Depends(get_db)) -> list[dict]:
+    from app.providers.sportdb import TEAM_SLUG_MAP
+
     data = get_standings()
+
+    # invert TEAM_SLUG_MAP: slug → team_name  (e.g. "palmeiras" → "Palmeiras")
+    slug_to_name: dict[str, str] = {v: k for k, v in TEAM_SLUG_MAP.items()}
+
+    # fetch all teams from DB in one query
+    team_names = list(slug_to_name.values())
+    teams_in_db = db.execute(
+        select(Team).where(Team.name.in_(team_names))
+    ).scalars().all()
+    name_to_logo: dict[str, str | None] = {t.name: t.logo_url for t in teams_in_db}
+
+    def resolve_logo(team_slug: str) -> str | None:
+        name = slug_to_name.get(team_slug)
+        if not name:
+            return None
+        return name_to_logo.get(name)
+
     return [
         {
             "rank": t["rank"],
@@ -613,6 +632,7 @@ def get_competition_standings() -> list[dict]:
             "goalDiff": int(t["goalDiff"]),
             "rankClass": t.get("rankClass", ""),
             "form": [e["eventSymbol"] for e in t.get("events", []) if e.get("eventType") != "upcoming"][:5],
+            "logo_url": resolve_logo(t.get("teamSlug", "")),
         }
         for t in data
     ]
