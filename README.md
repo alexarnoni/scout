@@ -1,101 +1,165 @@
-# Olheiro — Brasileirão 2026
+# Olheiro — Análise de Dados · Brasileirão Série A 2026
 
-> Plataforma de analytics e scouting de futebol para o Campeonato Brasileiro Série A 2026.
+<p align="center">
+  <img src="https://img.shields.io/badge/status-live-4ade80?style=flat-square" alt="Status" />
+  <img src="https://img.shields.io/badge/temporada-Brasileirão%202026-ea580c?style=flat-square" alt="Temporada" />
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-0.110-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/deploy-Cloudflare%20Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare" />
+  <img src="https://img.shields.io/badge/licença-MIT-6b7585?style=flat-square" alt="MIT" />
+</p>
 
-**Live:** [scout.alexarnoni.com](https://scout.alexarnoni.com) · **API:** [scout-api.alexarnoni.com](https://scout-api.alexarnoni.com/docs)
+<p align="center">
+  Plataforma de scouting e analytics para o Campeonato Brasileiro, com ranking de jogadores por posição, análise de elenco e identificação de talentos subvalorizados.
+</p>
+
+<p align="center">
+  <a href="https://scout.alexarnoni.com"><strong>🔗 scout.alexarnoni.com</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://scout-api.alexarnoni.com/docs">📄 API Docs</a>
+</p>
+
+<p align="center">
+  <a href="https://scout.alexarnoni.com">
+    <img src="docs/screenshot.png" alt="Olheiro — interface principal" width="100%" />
+  </a>
+</p>
 
 ---
 
-## Visão Geral
+## Sobre
 
-O Olheiro coleta, processa e expõe dados do Brasileirão 2026 em tempo real, calculando scores de scout por posição, identificando **Joias Escondidas** (alta performance com poucos minutos) e ranqueando jogadores via modelo **Moneyball** (score ÷ valor de mercado).
+O Olheiro é um projeto de portfólio voltado para **Engenharia e Análise de Dados**, construído sobre dados reais do Brasileirão 2026. O objetivo é demonstrar, end-to-end, a construção de uma pipeline de dados — desde a ingestão via API externa até a entrega de métricas analíticas em uma interface web.
 
-Desenvolvido como projeto de portfólio com foco em **Engenharia de Dados**: pipeline de ingestão automatizada, modelagem em camadas, infra containerizada e API documentada.
+O modelo de scout avalia jogadores por posição com métricas **normalizadas por 90 minutos** e aplica um fator de confiança proporcional ao tempo em campo, evitando scores inflados por amostras pequenas. Jogadores com alto score e baixo valor de mercado são sinalizados como **Joias Escondidas**.
+
+---
+
+## Features
+
+- **Perfil de time** — elenco, formação tática, KPIs da temporada e últimos resultados
+- **Ranking de jogadores** — top por posição (Goleiro, Defensor, Meio-campo, Atacante) com score, rating e valor de mercado
+- **Garimpo (Moneyball)** — índice `score ÷ valor de mercado` para identificar talentos subvalorizados
+- **Tabela da competição** — classificação em tempo real via SportDB
+- **Radar tático** — visualização das métricas ofensivas/defensivas do time
+- **Modal de jogador** — stats detalhados por partida, histórico e perfil
 
 ---
 
 ## Stack
 
+### Backend
 | Camada | Tecnologia |
 |---|---|
-| API | FastAPI · Uvicorn · SQLAlchemy 2.0 · Alembic |
-| Banco | PostgreSQL 16 (Docker) |
+| API | FastAPI + Uvicorn |
+| ORM | SQLAlchemy 2.0 |
+| Banco de dados | PostgreSQL 16 |
+| Migrations | Alembic |
 | Scheduler | APScheduler |
-| Frontend | HTML/CSS/JS vanilla · Chart.js · Cloudflare Pages |
-| Infra | Oracle Cloud VM · Docker Compose · Nginx · Let's Encrypt |
-| Dados | SportDB API · Flashscore (avg\_rating) · ESPN CDN (logos) |
+| Containerização | Docker + Docker Compose |
+
+### Frontend
+| Camada | Tecnologia |
+|---|---|
+| Interface | HTML / CSS / JavaScript (Vanilla) |
+| Tipografia | Barlow Condensed + Barlow (Google Fonts) |
+| Gráficos | Chart.js 4 |
+| Deploy | Cloudflare Pages (auto-deploy via git push) |
+
+### Infraestrutura
+| Componente | Tecnologia |
+|---|---|
+| Servidor | Oracle Cloud VM (Ubuntu) |
+| Reverse proxy | Nginx + SSL (Let's Encrypt) |
+| Firewall | UFW + Fail2ban |
+| Fonte de dados | SportDB API (`X-API-Key`) |
 
 ---
 
 ## Arquitetura
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Cloudflare Pages                       │
-│                   scout.alexarnoni.com                      │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTPS
-┌──────────────────────────▼──────────────────────────────────┐
-│                  Oracle Cloud VM (arnoni-cloud)             │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │                   Nginx + SSL                       │    │
-│  │         scout-api.alexarnoni.com → :8001            │    │
-│  └──────────────────────┬──────────────────────────────┘    │
-│                         │                                   │
-│  ┌──────────────────────▼──────────────────────────────┐    │
-│  │           Docker Compose                            │    │
-│  │                                                     │    │
-│  │  ┌─────────────────────┐  ┌──────────────────────┐  │    │
-│  │  │   scout-backend     │  │   scout-postgres     │  │    │
-│  │  │  FastAPI · :8001    │◄─►│  PostgreSQL 16 :5433 │  │    │
-│  │  │  APScheduler        │  │                      │  │    │
-│  │  └──────────┬──────────┘  └──────────────────────┘  │    │
-│  │             │                                        │    │
-│  └─────────────┼────────────────────────────────────────┘    │
-│                │                                             │
-└────────────────┼─────────────────────────────────────────────┘
-                 │ X-API-Key
-         ┌───────▼────────┐
-         │   SportDB API  │
-         └────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                     Cloudflare Pages                    │
+│                  frontend/ (HTML/CSS/JS)                │
+└───────────────────────┬─────────────────────────────────┘
+                        │ HTTPS
+┌───────────────────────▼─────────────────────────────────┐
+│               Oracle Cloud VM (arnoni-cloud)             │
+│                                                          │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │  Nginx (reverse proxy + SSL termination)        │    │
+│  └──────────────┬──────────────────────────────────┘    │
+│                 │                                        │
+│  ┌──────────────▼──────────────────────────────┐        │
+│  │  scout-backend (FastAPI / port 8001)        │        │
+│  │                                             │        │
+│  │  providers/                                 │        │
+│  │    sportdb.py       ← standings, fixtures   │        │
+│  │    sportdb_scout.py ← player stats          │        │
+│  │                                             │        │
+│  │  services/                                  │        │
+│  │    scout.py  ← ranking stateless (no DB)   │        │
+│  │                                             │        │
+│  │  routers/                                   │        │
+│  │    teams, matches, scout, standings         │        │
+│  └──────────────┬──────────────────────────────┘        │
+│                 │                                        │
+│  ┌──────────────▼──────────────────────────────┐        │
+│  │  scout-postgres (PostgreSQL 16 / port 5433) │        │
+│  └─────────────────────────────────────────────┘        │
+│                                                          │
+└──────────────────────────┬──────────────────────────────┘
+                           │ X-API-Key
+               ┌───────────▼───────────┐
+               │     SportDB API       │
+               │  (results, lineups,   │
+               │   player stats)       │
+               └───────────────────────┘
 ```
 
 ---
 
-## Estrutura do Projeto
+## Decisões técnicas
 
-```
-olheiro/
-├── backend/
-│   ├── app/
-│   │   ├── models/          # SQLAlchemy models (Match, Player, PlayerMatchStats…)
-│   │   ├── providers/       # Integração SportDB + Flashscore
-│   │   │   ├── sportdb.py          # Cliente principal + cache inteligente
-│   │   │   └── sportdb_scout.py    # Lógica de scout e ranking
-│   │   ├── routers/         # Endpoints FastAPI
-│   │   │   ├── teams.py
-│   │   │   ├── matches.py
-│   │   │   ├── players.py
-│   │   │   └── scout.py
-│   │   └── services/        # Persistência compartilhada
-│   ├── scripts/
-│   │   ├── seed_layer0.py   # Seed inicial (competição + times)
-│   │   ├── sync_date.py     # Sync de uma data específica
-│   │   ├── backfill.py      # Backfill de intervalo de datas
-│   │   └── scheduler.py     # Scheduler diário (APScheduler)
-│   └── alembic/             # Migrations
-├── frontend/
-│   ├── index.html           # SPA principal
-│   └── assets/
-├── infra/
-│   └── docker-compose.yml
-└── tests/
-    └── test_sportdb_scout_provider.py
-```
+**Por que SportDB em vez da ESPN?**
+O projeto começou consumindo endpoints informais da ESPN — funcionava, mas era frágil: sem autenticação, sem garantia de estabilidade e sujeito a quebrar sem aviso. A migração para a SportDB resolveu isso com uma API documentada, autenticada via `X-API-Key` e com endpoints dedicados para lineups, player stats e standings. O custo foi refatorar os providers e os scripts de seed, mas o resultado é uma base muito mais confiável para um portfólio sério.
+
+**Por que o ranking é stateless?**
+O endpoint `/scout/ranking` não toca o banco de dados — ele busca resultados e stats diretamente da SportDB em tempo real, calcula os scores na memória e retorna. A alternativa seria persistir as métricas de cada jogador no PostgreSQL e manter um job de atualização, mas isso adiciona complexidade de sincronização sem benefício real nessa fase. Com cache em memória (2h para stats de temporada), a performance é boa e o modelo fica simples de iterar.
+
+**Por que Cloudflare Pages para o frontend?**
+O frontend é 100% estático — HTML, CSS e JS vanilla, sem build step. O Cloudflare Pages faz deploy automático a cada `git push` na pasta `frontend/`, com CDN global e SSL incluso. Não faz sentido subir um servidor só para servir arquivos estáticos quando isso é resolvido em zero configuração.
+
+**Por que vanilla JS em vez de React/Vue?**
+O projeto tem uma única SPA com navegação simples entre três páginas. Adicionar um framework traria build tooling, bundler e complexidade de estado para um problema que `fetch` + `innerHTML` resolve com 200 linhas. A escolha mantém o foco nos dados — que é o ponto do portfólio — e não na infraestrutura de frontend.
 
 ---
 
-## Setup Local
+## Modelo de Scout
+
+O score de cada jogador é calculado em duas etapas:
+
+**1. score_raw** — média das métricas normalizadas (min-max 0–100 dentro do grupo de posição)
+
+**2. score final** — `score_raw × confidence`, onde `confidence = minutos_jogador / max_minutos_do_grupo`
+
+Isso penaliza amostras pequenas sem excluir jogadores com poucos jogos.
+
+### Métricas por posição
+
+| Posição | Métricas |
+|---|---|
+| Goleiro | save_rate, avg_rating, goals_p90_inv, yellow_cards_p90_inv |
+| Defensor | goals_p90, assists_p90, shots_p90, fouls_p90_inv, yellow_cards_p90_inv, avg_rating |
+| Meio-campo | goals_p90, assists_p90, shots_p90, shots_on_target_p90, fouls_p90_inv, yellow_cards_p90_inv, avg_rating |
+| Atacante | goals_p90, assists_p90, shots_p90, shots_on_target_p90, conversion_rate, xg_p90, yellow_cards_p90_inv, avg_rating |
+
+---
+
+## Setup local
 
 ### Pré-requisitos
 
@@ -109,17 +173,17 @@ olheiro/
 git clone https://github.com/alexarnoni/Scout.git
 cd Scout
 cp backend/.env.example backend/.env
-# preencher SPORTDB_API_KEY e DATABASE_URL
+# Editar backend/.env com DATABASE_URL e SPORTDB_API_KEY
 ```
 
 ### 2. Subir o banco
 
 ```bash
 cd infra
-docker-compose up -d
+docker compose up -d
 ```
 
-### 3. Instalar dependências do backend
+### 3. Instalar dependências
 
 ```bash
 cd backend
@@ -141,109 +205,102 @@ python -m scripts.seed_layer0
 
 Cria a competição "Brasileirao 2026" e os times no banco.
 
-### 6. Subir o backend
+### 6. Subir a API
 
 ```bash
 uvicorn app.main:app --reload --port 8001
 ```
 
-Documentação disponível em `http://localhost:8001/docs`.
-
 ---
 
-## Pipeline de Dados
-
-### Backfill histórico
-
-```bash
-python -m scripts.backfill \
-  --competition-id 1 \
-  --date-from 2026-01-28 \
-  --date-to 2026-03-14 \
-  --include-players
-```
-
-### Sync de uma data
-
-```bash
-python -m scripts.sync_date \
-  --competition-id 1 \
-  --date 2026-03-14 \
-  --include-players
-```
-
-### Scheduler automático
-
-Sincroniza automaticamente às 00:30 BRT (rodada anterior):
-
-```bash
-python -m scripts.scheduler
-```
-
-| Variável | Default | Descrição |
-|---|---|---|
-| `SCOUT_COMPETITION_ID` | `1` | ID da competição no banco |
-
----
-
-## Modelo de Scout
-
-O score é calculado **por posição**, com métricas normalizadas por 90 minutos.
-
-| Posição | Métricas principais |
-|---|---|
-| Goleiro | Defesas/90, Gols sofridos/90, Clean sheet rate |
-| Defensor | Duelos ganhos, Interceptações, Cartões |
-| Meio-campo | Passes, Assistências, Recuperações |
-| Atacante | Gols/90, Chutes, Conversão, xG |
-
-**Joias Escondidas:** jogadores com score ≥ 60 e ≤ 270 minutos jogados.
-
-**Garimpo (Moneyball):** `moneyball_score = scout_score ÷ valor_de_mercado (M€)`. Identifica jogadores subvalorizados antes do mercado perceber.
-
----
-
-## Deploy (Produção)
-
-### Frontend
-
-```bash
-git push origin main
-# Cloudflare Pages detecta mudanças em frontend/ e faz deploy automático
-```
+## Deploy (produção)
 
 ### Backend
 
 ```bash
+# Build e restart com força-recreate (necessário para .env changes)
 sudo docker compose -f /opt/scout/infra/docker-compose.yml up -d --build backend
 ```
 
-> Mudanças em `.env` exigem `--force-recreate` ao invés de simples restart.
+### Frontend
+
+Deploy automático via Cloudflare Pages a cada `git push` na pasta `frontend/`.
 
 ---
 
-## Testes
+## Estrutura do projeto
 
-```bash
-cd backend
-pytest tests/ -v
 ```
+Scout/
+├── docs/
+│   └── screenshot.png              # Preview da interface
+├── backend/
+│   ├── app/
+│   │   ├── core/config.py          # Settings e DATABASE_URL
+│   │   ├── models/                 # SQLAlchemy ORM models
+│   │   ├── providers/
+│   │   │   ├── sportdb.py          # Standings, fixtures, lineups
+│   │   │   └── sportdb_scout.py    # Player stats por partida
+│   │   ├── services/
+│   │   │   ├── scout.py            # Ranking stateless (sem DB)
+│   │   │   └── persistence.py      # Upsert e parsing compartilhados
+│   │   └── routers/                # Endpoints FastAPI
+│   ├── scripts/
+│   │   ├── seed_layer0.py          # Seed inicial
+│   │   ├── sync_date.py            # Sync de uma data
+│   │   ├── backfill.py             # Backfill de intervalo de datas
+│   │   └── scheduler.py            # Scheduler diário (APScheduler)
+│   └── alembic/                    # Migrations
+├── frontend/
+│   └── index.html                  # SPA principal
+└── infra/
+    └── docker-compose.yml
+```
+
+---
+
+## Variáveis de ambiente
+
+| Variável | Descrição |
+|---|---|
+| `DATABASE_URL` | Connection string PostgreSQL |
+| `SPORTDB_API_KEY` | Chave de autenticação da SportDB API |
+| `SCOUT_COMPETITION_ID` | ID da competição no banco (default: `1`) |
 
 ---
 
 ## Roadmap
 
-- [ ] **dbt** — camadas `stg_` e `mart_` substituindo cálculos Python
-- [ ] **Airflow** — substituir APScheduler por DAGs
-- [ ] **Copa do Mundo 2026** — grupos, convocados, fixtures, stats por seleção
-- [ ] **PWA** — manifest.json + service worker
-- [ ] **Percentis** — exibição de percentil nos cards de jogadores
-- [ ] **Métricas avançadas** — Índice de Pressão, Consistência Ponderada, Eficiência de Substituição
+| # | Feature | Status |
+|---|---|---|
+| 1 | **dbt** — transformações em camadas (`stg_matches` → `mart_player_season`) | ![planejado](https://img.shields.io/badge/planejado-6b7585?style=flat-square) |
+| 2 | **Airflow** — substituir APScheduler por DAGs orquestradas | ![planejado](https://img.shields.io/badge/planejado-6b7585?style=flat-square) |
+| 3 | **Copa do Mundo 2026** — página dedicada com grupos, convocados e fixtures | ![em breve](https://img.shields.io/badge/em%20breve-f59e0b?style=flat-square) |
+| 4 | **PWA** — manifest + service worker para instalação mobile | ![planejado](https://img.shields.io/badge/planejado-6b7585?style=flat-square) |
+| 5 | **Métricas avançadas** — Índice de Pressão, Consistência Ponderada, Índice de Revelação | ![planejado](https://img.shields.io/badge/planejado-6b7585?style=flat-square) |
+
+---
+
+## Licença
+
+Distribuído sob a licença MIT. Veja [`LICENSE`](LICENSE) para mais detalhes.
 
 ---
 
 ## Autor
 
-**Alexandre Arnoni** — Analista de Dados na Prefeitura de Praia Grande, estudante de Ciência de Dados (Uninter), em transição para Engenharia de Dados.
+**Alexandre Arnoni** — Data Analyst · em transição para Data Engineering
 
-[GitHub](https://github.com/alexarnoni) · [scout.alexarnoni.com](https://scout.alexarnoni.com)
+<p>
+  <a href="https://linkedin.com/in/alexarnoni">
+    <img src="https://img.shields.io/badge/LinkedIn-Alexandre%20Arnoni-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" />
+  </a>
+  &nbsp;
+  <a href="https://github.com/alexarnoni">
+    <img src="https://img.shields.io/badge/GitHub-alexarnoni-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub" />
+  </a>
+  &nbsp;
+  <a href="https://scout.alexarnoni.com">
+    <img src="https://img.shields.io/badge/Demo-scout.alexarnoni.com-ea580c?style=flat-square" alt="Demo" />
+  </a>
+</p>
