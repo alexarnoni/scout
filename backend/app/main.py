@@ -169,91 +169,10 @@ def get_match_or_404(db: Session, match_id: int) -> Match:
 
 
 def _aggregate_team_player_stats(team_id: str) -> list[dict]:
-    from app.providers.sportdb_scout import get_match_player_stats, get_season_results
+    from app.providers.sportdb_scout import get_player_season_stats
 
-    def _team_matches_participant(participant_ids: object) -> bool:
-        if isinstance(participant_ids, list):
-            return team_id in {str(pid) for pid in participant_ids}
-        if participant_ids is None:
-            return False
-        return str(participant_ids) == team_id
-
-    results = get_season_results()
-    team_matches = [
-        match
-        for match in results
-        if match.get("eventStage") == "FINISHED"
-        and (
-            _team_matches_participant(match.get("homeParticipantIds"))
-            or _team_matches_participant(match.get("awayParticipantIds"))
-        )
-    ]
-
-    players_by_id: dict[str, dict] = {}
-
-    for match in team_matches:
-        event_id = str(match.get("eventId", "") or "")
-        if not event_id:
-            continue
-
-        try:
-            match_players = get_match_player_stats(event_id)
-        except Exception:
-            continue
-
-        team_players = [p for p in match_players if str(p.get("team_id", "")) == team_id]
-        for p in team_players:
-            player_id = str(p.get("player_id", "") or "")
-            if not player_id:
-                continue
-
-            if player_id not in players_by_id:
-                players_by_id[player_id] = {
-                    "player_id": player_id,
-                    "name": p.get("player_name", ""),
-                    "goals": 0,
-                    "assists": 0,
-                    "yellow_cards": 0,
-                    "total_minutes": 0,
-                    "matches_played": 0,
-                    "_ratings": [],
-                }
-
-            acc = players_by_id[player_id]
-            if not acc["name"]:
-                acc["name"] = p.get("player_name", "")
-
-            acc["goals"] += int(p.get("goals", 0) or 0)
-            acc["assists"] += int(p.get("assists", 0) or 0)
-            acc["yellow_cards"] += int(p.get("yellow_cards", 0) or 0)
-            acc["total_minutes"] += int(p.get("minutes", 0) or 0)
-            acc["matches_played"] += 1
-
-            rating = p.get("rating")
-            if rating is not None:
-                try:
-                    acc["_ratings"].append(float(rating))
-                except (TypeError, ValueError):
-                    pass
-
-    aggregated: list[dict] = []
-    for player_id, acc in players_by_id.items():
-        ratings = acc["_ratings"]
-        avg_rating = (sum(ratings) / len(ratings)) if ratings else None
-        aggregated.append(
-            {
-                "player_id": player_id,
-                "name": acc["name"],
-                "goals": acc["goals"],
-                "assists": acc["assists"],
-                "avg_rating": avg_rating,
-                "total_minutes": acc["total_minutes"],
-                "yellow_cards": acc["yellow_cards"],
-                "matches_played": acc["matches_played"],
-            }
-        )
-
-    return aggregated
+    all_players = get_player_season_stats(season="2026", min_minutes=0)
+    return [p for p in all_players if p.get("team_id") == team_id]
 
 
 @app.get("/teams/{team_id}/top_scorers", response_model=TopScorersResponse)
@@ -264,7 +183,7 @@ def get_top_scorers(team_id: str) -> TopScorersResponse:
         key=lambda p: (
             -int(p.get("goals", 0) or 0),
             -int(p.get("assists", 0) or 0),
-            str(p.get("name", "")).lower(),
+            str(p.get("player_name", "")).lower(),
         ),
     )[:5]
 
@@ -277,7 +196,7 @@ def get_top_scorers(team_id: str) -> TopScorersResponse:
         top_scorers.append(
             TopScorerItem(
                 player_id=player_id,
-                name=str(player.get("name", "")),
+                name=str(player.get("player_name", "")),
                 goals=int(player.get("goals", 0) or 0),
                 assists=int(player.get("assists", 0) or 0),
                 matches_played=int(player.get("matches_played", 0) or 0),
@@ -294,12 +213,12 @@ def get_top_assists(team_id: str) -> list[dict]:
         players,
         key=lambda p: (
             -int(p.get("assists", 0) or 0),
-            str(p.get("name", "")).lower(),
+            str(p.get("player_name", "")).lower(),
         ),
     )[:5]
     return [
         {
-            "name": str(player.get("name", "")),
+            "name": str(player.get("player_name", "")),
             "value": int(player.get("assists", 0) or 0),
             "matches_played": int(player.get("matches_played", 0) or 0),
         }
@@ -315,12 +234,12 @@ def get_top_ratings(team_id: str) -> list[dict]:
         rated_players,
         key=lambda p: (
             -float(p.get("avg_rating", 0.0) or 0.0),
-            str(p.get("name", "")).lower(),
+            str(p.get("player_name", "")).lower(),
         ),
     )[:5]
     return [
         {
-            "name": str(player.get("name", "")),
+            "name": str(player.get("player_name", "")),
             "value": round(float(player.get("avg_rating", 0.0) or 0.0), 2),
             "matches_played": int(player.get("matches_played", 0) or 0),
         }
@@ -335,12 +254,12 @@ def get_top_minutes(team_id: str) -> list[dict]:
         players,
         key=lambda p: (
             -int(p.get("total_minutes", 0) or 0),
-            str(p.get("name", "")).lower(),
+            str(p.get("player_name", "")).lower(),
         ),
     )[:5]
     return [
         {
-            "name": str(player.get("name", "")),
+            "name": str(player.get("player_name", "")),
             "value": int(player.get("total_minutes", 0) or 0),
             "matches_played": int(player.get("matches_played", 0) or 0),
         }
@@ -355,12 +274,12 @@ def get_top_yellow_cards(team_id: str) -> list[dict]:
         players,
         key=lambda p: (
             -int(p.get("yellow_cards", 0) or 0),
-            str(p.get("name", "")).lower(),
+            str(p.get("player_name", "")).lower(),
         ),
     )[:5]
     return [
         {
-            "name": str(player.get("name", "")),
+            "name": str(player.get("player_name", "")),
             "value": int(player.get("yellow_cards", 0) or 0),
             "matches_played": int(player.get("matches_played", 0) or 0),
         }
