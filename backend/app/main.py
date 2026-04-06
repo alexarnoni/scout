@@ -35,7 +35,6 @@ from app.schemas.analytics import (
     TeamTimeSeriesPoint,
     TopScorerItem,
     TopScorersResponse,
-    TopStatItem,
 )
 from app.schemas.player_analytics import (
     PlayerAnalyticsSummary,
@@ -169,164 +168,203 @@ def get_match_or_404(db: Session, match_id: int) -> Match:
     return match
 
 
-@app.get("/teams/{team_id}/top_scorers", response_model=TopScorersResponse)
-def get_top_scorers(
-    team_id: str,
-    db: Session = Depends(get_db),
-) -> TopScorersResponse:
-    get_team_or_404(db, team_id)
+def _aggregate_team_player_stats(team_id: str) -> list[dict]:
+    from app.providers.sportdb_scout import get_match_player_stats, get_season_results
 
-    rows = db.execute(
-        select(
-            Player.id.label("player_id"),
-            Player.name.label("name"),
-            func.sum(func.coalesce(PlayerMatchStats.goals, 0)).label("goals"),
-            func.sum(func.coalesce(PlayerMatchStats.assists, 0)).label("assists"),
-            func.count(PlayerMatchStats.id).label("matches_played"),
-        )
-        .join(Player, Player.id == PlayerMatchStats.player_id)
-        .where(
-            PlayerMatchStats.team_id == team_id,
-        )
-        .group_by(Player.id, Player.name)
-        .having(func.sum(func.coalesce(PlayerMatchStats.goals, 0)) > 0)
-        .order_by(
-            func.sum(func.coalesce(PlayerMatchStats.goals, 0)).desc(),
-            func.sum(func.coalesce(PlayerMatchStats.assists, 0)).desc(),
-            Player.name.asc(),
-        )
-        .limit(5)
-    ).all()
+    def _team_matches_participant(participant_ids: object) -> bool:
+        if isinstance(participant_ids, list):
+            return team_id in {str(pid) for pid in participant_ids}
+        if participant_ids is None:
+            return False
+        return str(participant_ids) == team_id
 
-    top_scorers = [
-        TopScorerItem(
-            player_id=row.player_id,
-            name=row.name,
-            goals=row.goals,
-            assists=row.assists or 0,
-            matches_played=row.matches_played,
+    results = get_season_results()
+    team_matches = [
+        match
+        for match in results
+        if match.get("eventStage") == "FINISHED"
+        and (
+            _team_matches_participant(match.get("homeParticipantIds"))
+            or _team_matches_participant(match.get("awayParticipantIds"))
         )
-        for row in rows
     ]
+
+    players_by_id: dict[str, dict] = {}
+
+    for match in team_matches:
+        event_id = str(match.get("eventId", "") or "")
+        if not event_id:
+            continue
+
+        try:
+            match_players = get_match_player_stats(event_id)
+        except Exception:
+            continue
+
+        team_players = [p for p in match_players if str(p.get("team_id", "")) == team_id]
+        for p in team_players:
+            player_id = str(p.get("player_id", "") or "")
+            if not player_id:
+                continue
+
+            if player_id not in players_by_id:
+                players_by_id[player_id] = {
+                    "player_id": player_id,
+                    "name": p.get("player_name", ""),
+                    "goals": 0,
+                    "assists": 0,
+                    "yellow_cards": 0,
+                    "total_minutes": 0,
+                    "matches_played": 0,
+                    "_ratings": [],
+                }
+
+            acc = players_by_id[player_id]
+            if not acc["name"]:
+                acc["name"] = p.get("player_name", "")
+
+            acc["goals"] += int(p.get("goals", 0) or 0)
+            acc["assists"] += int(p.get("assists", 0) or 0)
+            acc["yellow_cards"] += int(p.get("yellow_cards", 0) or 0)
+            acc["total_minutes"] += int(p.get("minutes", 0) or 0)
+            acc["matches_played"] += 1
+
+            rating = p.get("rating")
+            if rating is not None:
+                try:
+                    acc["_ratings"].append(float(rating))
+                except (TypeError, ValueError):
+                    pass
+
+    aggregated: list[dict] = []
+    for player_id, acc in players_by_id.items():
+        ratings = acc["_ratings"]
+        avg_rating = (sum(ratings) / len(ratings)) if ratings else None
+        aggregated.append(
+            {
+                "player_id": player_id,
+                "name": acc["name"],
+                "goals": acc["goals"],
+                "assists": acc["assists"],
+                "avg_rating": avg_rating,
+                "total_minutes": acc["total_minutes"],
+                "yellow_cards": acc["yellow_cards"],
+                "matches_played": acc["matches_played"],
+            }
+        )
+
+    return aggregated
+
+
+@app.get("/teams/{team_id}/top_scorers", response_model=TopScorersResponse)
+def get_top_scorers(team_id: str) -> TopScorersResponse:
+    players = _aggregate_team_player_stats(team_id)
+    ranked = sorted(
+        players,
+        key=lambda p: (
+            -int(p.get("goals", 0) or 0),
+            -int(p.get("assists", 0) or 0),
+            str(p.get("name", "")).lower(),
+        ),
+    )[:5]
+
+    top_scorers: list[TopScorerItem] = []
+    for player in ranked:
+        try:
+            player_id = int(str(player.get("player_id", "0")))
+        except ValueError:
+            continue
+        top_scorers.append(
+            TopScorerItem(
+                player_id=player_id,
+                name=str(player.get("name", "")),
+                goals=int(player.get("goals", 0) or 0),
+                assists=int(player.get("assists", 0) or 0),
+                matches_played=int(player.get("matches_played", 0) or 0),
+            )
+        )
 
     return TopScorersResponse(team_id=team_id, top_scorers=top_scorers)
 
 
-@app.get("/teams/{team_id}/top_assists", response_model=list[TopStatItem])
-def get_top_assists(
-    team_id: int,
-    db: Session = Depends(get_db),
-) -> list[TopStatItem]:
-    get_team_or_404(db, team_id)
-    rows = db.execute(
-        select(
-            Player.id.label("player_id"),
-            Player.name.label("name"),
-            func.sum(func.coalesce(PlayerMatchStats.assists, 0)).label("value"),
-            func.count(PlayerMatchStats.id).label("matches_played"),
-        )
-        .join(Player, Player.id == PlayerMatchStats.player_id)
-        .where(PlayerMatchStats.team_id == team_id)
-        .group_by(Player.id, Player.name)
-        .having(func.sum(func.coalesce(PlayerMatchStats.assists, 0)) > 0)
-        .order_by(
-            func.sum(func.coalesce(PlayerMatchStats.assists, 0)).desc(),
-            Player.name.asc(),
-        )
-        .limit(5)
-    ).all()
+@app.get("/teams/{team_id}/top_assists", response_model=list[dict])
+def get_top_assists(team_id: str) -> list[dict]:
+    players = _aggregate_team_player_stats(team_id)
+    ranked = sorted(
+        players,
+        key=lambda p: (
+            -int(p.get("assists", 0) or 0),
+            str(p.get("name", "")).lower(),
+        ),
+    )[:5]
     return [
-        TopStatItem(player_id=r.player_id, name=r.name, value=r.value, matches_played=r.matches_played)
-        for r in rows
+        {
+            "name": str(player.get("name", "")),
+            "value": int(player.get("assists", 0) or 0),
+            "matches_played": int(player.get("matches_played", 0) or 0),
+        }
+        for player in ranked
     ]
 
 
-@app.get("/teams/{team_id}/top_ratings", response_model=list[TopStatItem])
-def get_top_ratings(
-    team_id: int,
-    db: Session = Depends(get_db),
-) -> list[TopStatItem]:
-    get_team_or_404(db, team_id)
-    rows = db.execute(
-        select(
-            Player.id.label("player_id"),
-            Player.name.label("name"),
-            func.avg(PlayerMatchStats.rating).label("value"),
-            func.count(PlayerMatchStats.id).label("matches_played"),
-        )
-        .join(Player, Player.id == PlayerMatchStats.player_id)
-        .where(PlayerMatchStats.team_id == team_id)
-        .where(PlayerMatchStats.rating.isnot(None))
-        .group_by(Player.id, Player.name)
-        .having(func.count(PlayerMatchStats.id) >= 3)
-        .order_by(func.avg(PlayerMatchStats.rating).desc(), Player.name.asc())
-        .limit(5)
-    ).all()
+@app.get("/teams/{team_id}/top_ratings", response_model=list[dict])
+def get_top_ratings(team_id: str) -> list[dict]:
+    players = _aggregate_team_player_stats(team_id)
+    rated_players = [p for p in players if p.get("avg_rating") is not None]
+    ranked = sorted(
+        rated_players,
+        key=lambda p: (
+            -float(p.get("avg_rating", 0.0) or 0.0),
+            str(p.get("name", "")).lower(),
+        ),
+    )[:5]
     return [
-        TopStatItem(
-            player_id=r.player_id,
-            name=r.name,
-            value=round(float(r.value), 2),
-            matches_played=r.matches_played,
-        )
-        for r in rows
+        {
+            "name": str(player.get("name", "")),
+            "value": round(float(player.get("avg_rating", 0.0) or 0.0), 2),
+            "matches_played": int(player.get("matches_played", 0) or 0),
+        }
+        for player in ranked
     ]
 
 
-@app.get("/teams/{team_id}/top_minutes", response_model=list[TopStatItem])
-def get_top_minutes(
-    team_id: int,
-    db: Session = Depends(get_db),
-) -> list[TopStatItem]:
-    get_team_or_404(db, team_id)
-    rows = db.execute(
-        select(
-            Player.id.label("player_id"),
-            Player.name.label("name"),
-            func.sum(func.coalesce(PlayerMatchStats.minutes, 0)).label("value"),
-            func.count(PlayerMatchStats.id).label("matches_played"),
-        )
-        .join(Player, Player.id == PlayerMatchStats.player_id)
-        .where(PlayerMatchStats.team_id == team_id)
-        .group_by(Player.id, Player.name)
-        .order_by(
-            func.sum(func.coalesce(PlayerMatchStats.minutes, 0)).desc(),
-            Player.name.asc(),
-        )
-        .limit(5)
-    ).all()
+@app.get("/teams/{team_id}/top_minutes", response_model=list[dict])
+def get_top_minutes(team_id: str) -> list[dict]:
+    players = _aggregate_team_player_stats(team_id)
+    ranked = sorted(
+        players,
+        key=lambda p: (
+            -int(p.get("total_minutes", 0) or 0),
+            str(p.get("name", "")).lower(),
+        ),
+    )[:5]
     return [
-        TopStatItem(player_id=r.player_id, name=r.name, value=r.value, matches_played=r.matches_played)
-        for r in rows
+        {
+            "name": str(player.get("name", "")),
+            "value": int(player.get("total_minutes", 0) or 0),
+            "matches_played": int(player.get("matches_played", 0) or 0),
+        }
+        for player in ranked
     ]
 
 
-@app.get("/teams/{team_id}/top_yellow_cards", response_model=list[TopStatItem])
-def get_top_yellow_cards(
-    team_id: int,
-    db: Session = Depends(get_db),
-) -> list[TopStatItem]:
-    get_team_or_404(db, team_id)
-    rows = db.execute(
-        select(
-            Player.id.label("player_id"),
-            Player.name.label("name"),
-            func.sum(func.coalesce(PlayerMatchStats.yellow_cards, 0)).label("value"),
-            func.count(PlayerMatchStats.id).label("matches_played"),
-        )
-        .join(Player, Player.id == PlayerMatchStats.player_id)
-        .where(PlayerMatchStats.team_id == team_id)
-        .group_by(Player.id, Player.name)
-        .having(func.sum(func.coalesce(PlayerMatchStats.yellow_cards, 0)) > 0)
-        .order_by(
-            func.sum(func.coalesce(PlayerMatchStats.yellow_cards, 0)).desc(),
-            Player.name.asc(),
-        )
-        .limit(5)
-    ).all()
+@app.get("/teams/{team_id}/top_yellow_cards", response_model=list[dict])
+def get_top_yellow_cards(team_id: str) -> list[dict]:
+    players = _aggregate_team_player_stats(team_id)
+    ranked = sorted(
+        players,
+        key=lambda p: (
+            -int(p.get("yellow_cards", 0) or 0),
+            str(p.get("name", "")).lower(),
+        ),
+    )[:5]
     return [
-        TopStatItem(player_id=r.player_id, name=r.name, value=r.value, matches_played=r.matches_played)
-        for r in rows
+        {
+            "name": str(player.get("name", "")),
+            "value": int(player.get("yellow_cards", 0) or 0),
+            "matches_played": int(player.get("matches_played", 0) or 0),
+        }
+        for player in ranked
     ]
 
 
