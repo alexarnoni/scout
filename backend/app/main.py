@@ -82,7 +82,7 @@ async def lifespan(app):
             from .providers.sportdb_scout import get_player_season_stats
             get_player_season_stats()
         except Exception:
-            pass
+            logger.warning("warmup step 1 failed", exc_info=True)
         try:
             await asyncio.gather(
                 asyncio.to_thread(get_standings, season="2026"),
