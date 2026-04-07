@@ -557,7 +557,7 @@ async function selectTeam(id, teamMeta) {
   document.getElementById('empty-state').style.display = 'none';
   const profile = document.getElementById('profile');
   profile.style.display = 'block';
-  profile.innerHTML = skeletonHTML();
+  renderTeamSkeleton(profile);
   try {
     const [summary, matches, squad, fsLineup, seasonAvgs, fixtures] = await Promise.all([
       api(`/teams/${id}/analytics/summary`, { window: 38 }).catch(() => null),
@@ -578,26 +578,89 @@ async function selectTeam(id, teamMeta) {
 }
 
 // ── skeleton ──────────────────────────────────────────────────────────────
-function skeletonHTML() {
-  return `
-  <div class="hero" style="gap:16px">
-    <div class="skeleton" style="width:72px;height:72px;border-radius:8px"></div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-      <div class="skeleton" style="height:22px;width:55%"></div>
-      <div class="skeleton" style="height:13px;width:35%"></div>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <div class="skeleton" style="height:22px;width:70px;border-radius:20px"></div>
-        <div class="skeleton" style="height:22px;width:80px;border-radius:20px"></div>
+function renderTeamSkeleton(container) {
+  container.innerHTML = `
+  <div class="hero">
+    <div class="skeleton" style="width:72px;height:72px;border-radius:12px"></div>
+    <div class="hero-info">
+      <div class="skeleton" style="height:30px;width:240px;max-width:70%"></div>
+      <div class="skeleton" style="height:13px;width:140px;margin-top:6px"></div>
+      <div class="hero-badges">
+        <div class="skeleton" style="height:24px;width:92px;border-radius:20px"></div>
+        <div class="skeleton" style="height:24px;width:108px;border-radius:20px"></div>
       </div>
     </div>
   </div>
+
   <div class="section">
-    <div class="skeleton" style="height:11px;width:80px;margin-bottom:14px"></div>
-    <div class="kpi-grid">${Array(6).fill('<div class="skeleton" style="height:70px;border-radius:8px"></div>').join('')}</div>
+    <div class="section-label">Temporada</div>
+    <div class="kpi-grid">
+      ${Array(6).fill('<div class="kpi-card"><div class="skeleton" style="height:38px;width:58%;margin:0 auto 8px"></div><div class="skeleton" style="height:11px;width:72%;margin:0 auto"></div></div>').join('')}
+    </div>
   </div>
+
   <div class="section">
-    <div class="skeleton" style="height:11px;width:120px;margin-bottom:14px"></div>
-    <div style="display:flex;gap:8px">${Array(5).fill('<div class="skeleton" style="height:32px;width:90px;border-radius:20px"></div>').join('')}</div>
+    <div class="section-label">Últimos resultados</div>
+    <div class="results-row">
+      ${Array(5).fill('<div class="skeleton" style="height:32px;width:92px;border-radius:20px"></div>').join('')}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="analysis-grid">
+      <div>
+        <div class="section-label">Stats</div>
+        <div class="panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px">
+          ${Array(7).fill('<div class="stat-row"><div class="skeleton" style="height:12px;width:110px"></div><div class="skeleton" style="height:6px;flex:1;border-radius:3px"></div><div class="skeleton" style="height:12px;width:44px"></div></div>').join('')}
+        </div>
+      </div>
+      <div>
+        <div class="section-label">Perfil do time</div>
+        <div class="panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div class="skeleton" style="width:100%;height:220px;border-radius:8px"></div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label">Próximo jogo</div>
+        <div class="panel" style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div class="skeleton" style="height:11px;width:62%;margin-bottom:12px"></div>
+          <div class="nm-teams">
+            <div class="nm-team">
+              <div class="skeleton" style="height:32px;width:32px;border-radius:6px"></div>
+              <div class="skeleton" style="height:12px;width:72px"></div>
+            </div>
+            <div class="skeleton" style="height:14px;width:20px"></div>
+            <div class="nm-team">
+              <div class="skeleton" style="height:32px;width:32px;border-radius:6px"></div>
+              <div class="skeleton" style="height:12px;width:72px"></div>
+            </div>
+          </div>
+          <div class="skeleton" style="height:11px;width:55%;margin:6px auto 0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="border-bottom:none">
+    <div class="section-label">Elenco</div>
+    <div class="squad-grid">
+      <div>
+        <div class="field-wrap">
+          <div class="field-header">
+            <div class="skeleton" style="height:12px;width:170px"></div>
+          </div>
+          <div style="padding:12px">
+            <div class="skeleton" style="height:280px;width:100%;border-radius:8px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bench-section">
+        <div class="bench-section-title">Reservas</div>
+        <div class="bench-list">
+          ${Array(8).fill('<div class="bench-item"><div class="skeleton" style="height:12px;width:18px"></div><div class="skeleton" style="height:12px;flex:1"></div><div class="skeleton" style="height:10px;width:28px"></div></div>').join('')}
+        </div>
+      </div>
+    </div>
   </div>`;
 }
 
