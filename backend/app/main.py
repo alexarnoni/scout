@@ -90,7 +90,11 @@ def _extract_team_ids_from_standings(standings: list[dict]) -> list[str]:
 
 def _prefetch_flashscore_lineup_safe(team_id: str) -> None:
     try:
-        _get_flashscore_lineup_payload(team_id)
+        _get_flashscore_lineup_payload(
+            team_id,
+            include_match_stats=False,
+            include_player_matches_played=False,
+        )
     except Exception:
         logger.warning(
             "flashscore_lineup pre-fetch failed for team %s",
@@ -976,6 +980,8 @@ def get_competition_standings(db: Session = Depends(get_db)) -> list[dict]:
 def _get_flashscore_lineup_payload(
     team_id: str,
     db: Session | None = None,
+    include_match_stats: bool = True,
+    include_player_matches_played: bool = True,
 ) -> dict:
     if not team_id:
         raise HTTPException(status_code=404, detail=f"Slug não encontrado: {team_id}")
@@ -1007,66 +1013,71 @@ def _get_flashscore_lineup_payload(
     players = starters_group.get(side, [])
     bench_players = subs_group.get(side, [])
 
-    matches_played_2026_by_id: dict[str, int] = {}
-    missing_participant_ids: set[str] = set()
+    if include_player_matches_played:
+        matches_played_2026_by_id: dict[str, int] = {}
+        missing_participant_ids: set[str] = set()
 
-    for p in players:
-        participant_id = str(p.get("participantId", "")).strip()
-        if not participant_id:
-            continue
+        for p in players:
+            participant_id = str(p.get("participantId", "")).strip()
+            if not participant_id:
+                continue
 
-        parsed = _parse_flashscore_participant_url(str(p.get("participantUrl", "")))
-        matches_played = None
-        if parsed:
-            slug, pid = parsed
-            try:
-                profile = get_player_profile(slug, pid)
-                matches_played = _extract_matches_played_2026(profile)
-            except Exception:
-                matches_played = None
+            parsed = _parse_flashscore_participant_url(str(p.get("participantUrl", "")))
+            matches_played = None
+            if parsed:
+                slug, pid = parsed
+                try:
+                    profile = get_player_profile(slug, pid)
+                    matches_played = _extract_matches_played_2026(profile)
+                except Exception:
+                    matches_played = None
 
-        if matches_played is None:
-            missing_participant_ids.add(participant_id)
-        else:
-            matches_played_2026_by_id[participant_id] = matches_played
+            if matches_played is None:
+                missing_participant_ids.add(participant_id)
+            else:
+                matches_played_2026_by_id[participant_id] = matches_played
 
-    if missing_participant_ids and db is not None:
-        matches_played_2026_by_id.update(
-            _get_db_matches_played_2026_by_participant_id(db, missing_participant_ids)
-        )
+        if missing_participant_ids and db is not None:
+            matches_played_2026_by_id.update(
+                _get_db_matches_played_2026_by_participant_id(db, missing_participant_ids)
+            )
 
-    for p in players:
-        participant_id = str(p.get("participantId", "")).strip()
-        p["matches_played_2026"] = matches_played_2026_by_id.get(participant_id)
+        for p in players:
+            participant_id = str(p.get("participantId", "")).strip()
+            p["matches_played_2026"] = matches_played_2026_by_id.get(participant_id)
+    else:
+        for p in players:
+            p["matches_played_2026"] = None
 
     formation = ""
     if players:
         formation = (players[0].get("formation", "") or "").replace("1-", "")
 
-    try:
-        raw_stats = fetch_match_stats(event_id)
-        match_period = next((p for p in raw_stats if p["period"] == "Match"), None)
-        stats = {}
-        if match_period:
-            STAT_MAP = {
-                "Ball possession": "possession",
-                "Total shots": "shots",
-                "Shots on target": "shots_on_target",
-                "Expected goals (xG)": "xg",
-                "Corner kicks": "corners",
-                "Passes": "passes",
-                "Fouls": "fouls",
-                "Yellow cards": "yellow_cards",
-            }
-            for s in match_period["stats"]:
-                key = STAT_MAP.get(s["statName"])
-                if key and key not in stats:
-                    stats[key] = {
-                        "home": s["homeValue"],
-                        "away": s["awayValue"],
-                    }
-    except Exception:
-        stats = {}
+    stats = {}
+    if include_match_stats:
+        try:
+            raw_stats = fetch_match_stats(event_id)
+            match_period = next((p for p in raw_stats if p["period"] == "Match"), None)
+            if match_period:
+                STAT_MAP = {
+                    "Ball possession": "possession",
+                    "Total shots": "shots",
+                    "Shots on target": "shots_on_target",
+                    "Expected goals (xG)": "xg",
+                    "Corner kicks": "corners",
+                    "Passes": "passes",
+                    "Fouls": "fouls",
+                    "Yellow cards": "yellow_cards",
+                }
+                for s in match_period["stats"]:
+                    key = STAT_MAP.get(s["statName"])
+                    if key and key not in stats:
+                        stats[key] = {
+                            "home": s["homeValue"],
+                            "away": s["awayValue"],
+                        }
+        except Exception:
+            stats = {}
 
     return {
         "event_id": event_id,
