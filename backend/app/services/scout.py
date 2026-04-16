@@ -1,3 +1,6 @@
+import math
+from statistics import mean, stdev
+
 from ..providers.sportdb_scout import get_player_season_stats
 
 POSITION_MAP = {
@@ -111,3 +114,59 @@ def get_scout_ranking(position_group: str, min_minutes: int = 180, season: str =
         p["is_hidden_gem"] = p["score"] >= score_p75 and p["total_minutes"] <= minutes_p25
 
     return ranked
+
+
+MARKET_VALUE_FLOOR = 100_000  # €100K — mínimo realista para Série A
+
+
+def compute_garimpo(players: list[dict]) -> list[dict]:
+    """
+    Calcula o Garimpo (z-score dual) para uma lista de jogadores já ranqueados.
+    Cada jogador no input deve ter: score (float), market_value_m (float|None).
+    Jogadores sem market_value_m são incluídos com garimpo_score=None.
+
+    Fórmula:
+        z_perf  = (score - mean(scores)) / stdev(scores)
+        z_valor = (log(mv) - mean(log_mvs)) / stdev(log_mvs)
+        garimpo = z_perf - z_valor
+
+    O log comprime a escala de valor de mercado.
+    A subtração mede a desconexão: performance acima da média MENOS custo acima da média.
+    """
+    # Separa jogadores com e sem valor de mercado
+    with_mv = [p for p in players if p.get("market_value_m") and p["market_value_m"] > 0]
+    without_mv = [p for p in players if not p.get("market_value_m") or p["market_value_m"] <= 0]
+
+    if len(with_mv) < 3:  # Grupo muito pequeno — z-score não faz sentido
+        for p in players:
+            p["garimpo_score"] = None
+        return sorted(players, key=lambda x: x.get("score", 0), reverse=True)
+
+    scores = [p["score"] for p in with_mv]
+    log_mvs = [math.log(max(p["market_value_m"] * 1_000_000, MARKET_VALUE_FLOOR)) for p in with_mv]
+
+    scores_mean = mean(scores)
+    scores_std  = stdev(scores) if len(scores) > 1 else 1.0
+    mvs_mean    = mean(log_mvs)
+    mvs_std     = stdev(log_mvs) if len(log_mvs) > 1 else 1.0
+
+    # Proteção contra std=0 (todos iguais)
+    if scores_std == 0:
+        scores_std = 1.0
+    if mvs_std == 0:
+        mvs_std = 1.0
+
+    for p in with_mv:
+        z_perf  = (p["score"] - scores_mean) / scores_std
+        log_mv  = math.log(max(p["market_value_m"] * 1_000_000, MARKET_VALUE_FLOOR))
+        z_valor = (log_mv - mvs_mean) / mvs_std
+        p["garimpo_score"] = round(z_perf - z_valor, 2)
+
+    for p in without_mv:
+        p["garimpo_score"] = None
+
+    all_players = with_mv + without_mv
+    return sorted(
+        all_players,
+        key=lambda x: (x["garimpo_score"] is None, -(x["garimpo_score"] or 0)),
+    )

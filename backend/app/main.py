@@ -1161,21 +1161,26 @@ def scout_moneyball(
     import re
     if position not in VALID_POSITIONS:
         raise HTTPException(status_code=400, detail="Invalid position")
+
     ranking = get_scout_ranking(position, min_minutes, season)
-    result = []
-    for p in ranking[:20]:
+
+    # Busca valor de mercado para TODOS os jogadores do grupo (não só top 20)
+    for p in ranking:
         mv_str = get_player_market_value(p["player_name"])
         mv_num = None
         if mv_str:
-            match = re.search(r'[\d.]+', mv_str.replace(',', '.'))
+            match = re.search(r'[\d,.]+', mv_str.replace(',', '.'))
             if match:
-                val = float(match.group())
+                val = float(match.group().replace(',', '.'))
                 if 'k' in mv_str.lower():
                     val /= 1000
                 mv_num = val
-        moneyball = round(p["score"] / mv_num, 2) if mv_num and mv_num > 0 else None
-        result.append({**p, "market_value": mv_str, "market_value_m": mv_num, "moneyball_score": moneyball})
-    result.sort(key=lambda x: x["moneyball_score"] or 0, reverse=True)
+        p["market_value"] = mv_str
+        p["market_value_m"] = mv_num
+
+    # Calcula garimpo via z-score dual
+    from app.services.scout import compute_garimpo
+    result = compute_garimpo(ranking)
     return result
 
 

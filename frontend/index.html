@@ -1161,14 +1161,16 @@ async function loadGarimpo(container, position = 'Todos') {
       </div>
       <div class="ranking-filters" style="margin-top:4px;margin-bottom:16px">
         ${MB_POSITIONS.map(p => `<button class="ranking-filter-btn ${p === position ? 'active' : ''}" onclick="loadGarimpo(document.getElementById('ranking-page'), '${p}')">${p}</button>`).join('')}
-        <span style="font-size:11px;color:var(--text-muted);margin-left:8px">score ÷ valor de mercado</span>
+        <span style="font-size:11px;color:var(--text-muted);margin-left:8px">z-score dual · performance vs. preço</span>
         <span style="position:relative;display:inline-block;margin-left:6px">
           <span id="garimpo-info-btn" style="cursor:pointer;font-size:12px;color:var(--text-muted);border:1px solid var(--border);border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center" onclick="toggleGarimpoInfo()">ℹ</span>
           <div id="garimpo-info-box" style="display:none;position:absolute;top:24px;left:0;width:320px;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;color:var(--text-secondary);line-height:1.6;z-index:50">
             <strong style="color:var(--text-primary);display:block;margin-bottom:6px">Como funciona o Garimpo?</strong>
-            O índice divide o score de scout do jogador pelo valor de mercado em milhões de euros. O score é calculado com métricas normalizadas por 90 minutos — gols, assistências, chutes, passes, duelos e mais, variando por posição.
+            O Garimpo usa z-score dual para encontrar jogadores cujo preço de mercado não reflete a performance real — inspirado no Moneyball. Ele compara o quanto cada jogador performa acima da média do grupo com o quanto ele custa acima da média, usando escala logarítmica no valor de mercado.
             <br><br>
-            Quanto maior o número, mais o jogador entrega por euro investido. Ideal pra identificar talentos subvalorizados antes do mercado perceber.
+            <strong>Garimpo positivo alto (+1.5 ou mais):</strong> o mercado está subestimando esse jogador.<br>
+            <strong>Garimpo próximo de zero:</strong> preço e performance estão alinhados.<br>
+            <strong>Garimpo negativo:</strong> o jogador está supervalorizado pelo mercado.
           </div>
         </span>
       </div>
@@ -1189,8 +1191,8 @@ async function loadGarimpo(container, position = 'Todos') {
     }
 
     players = players
-      .filter(p => p.moneyball_score)
-      .sort((a, b) => b.moneyball_score - a.moneyball_score);
+      .filter(p => p.garimpo_score !== null && p.garimpo_score !== undefined)
+      .sort((a, b) => b.garimpo_score - a.garimpo_score);
 
     const body = document.getElementById('ranking-body');
     if (!players.length) {
@@ -1200,8 +1202,9 @@ async function loadGarimpo(container, position = 'Todos') {
 
     const rows = players.map((p, i) => {
       const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-      const mb = p.moneyball_score;
-      const mbColor = mb >= 20 ? 'var(--accent)' : mb >= 10 ? 'var(--draw)' : 'var(--text-secondary)';
+      const g = p.garimpo_score;
+      const gColor = g >= 1.5 ? 'var(--accent)' : g >= 0.5 ? 'var(--draw)' : g < 0 ? 'var(--loss)' : 'var(--text-secondary)';
+      const gDisplay = g > 0 ? '+' + g.toFixed(2) : g.toFixed(2);
       const posLabel = p.position_group || '';
       return `<tr>
         <td class="rank-num ${rankClass}">${i + 1}</td>
@@ -1214,7 +1217,7 @@ async function loadGarimpo(container, position = 'Todos') {
         <td style="text-align:right;font-size:12px;color:var(--text-muted)">${p.total_minutes}min</td>
         <td style="text-align:right;font-size:12px;color:var(--text-muted)">${Math.round(p.score)}</td>
         <td style="text-align:right;font-size:12px;color:var(--text-muted)">${p.market_value || '—'}</td>
-        <td style="text-align:right;font-size:14px;font-weight:700;color:${mbColor}">${mb.toFixed(1)}</td>
+        <td style="text-align:right;font-size:14px;font-weight:700;color:${gColor}">${gDisplay}</td>
       </tr>`;
     }).join('');
 
@@ -1227,7 +1230,7 @@ async function loadGarimpo(container, position = 'Todos') {
             <th class="right">Min</th>
             <th class="right">Score</th>
             <th class="right">Valor</th>
-            <th class="right">⛏️ Score</th>
+            <th class="right">⛏️ Garimpo</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
