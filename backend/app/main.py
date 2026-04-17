@@ -159,9 +159,26 @@ async def warmup() -> bool:
 
 @asynccontextmanager
 async def lifespan(app):
-    logger.info("sportdb pre-fetch starting...")
-    if await warmup():
+    async def _startup():
+        logger.info("sportdb pre-fetch starting...")
+        if not await warmup():
+            return
         logger.info("sportdb pre-fetch completed")
+
+        # Fase 2: prefetch market values em background
+        try:
+            from .providers.sportdb_scout import get_player_season_stats
+
+            players = get_player_season_stats()
+            player_names = [p["player_name"] for p in players]
+
+            from .providers.sportdb import prefetch_market_values
+
+            await asyncio.to_thread(prefetch_market_values, player_names)
+        except Exception:
+            logger.warning("market value prefetch failed", exc_info=True)
+
+    asyncio.create_task(_startup())
     yield
 
 

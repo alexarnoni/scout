@@ -257,3 +257,32 @@ def get_player_market_value(name: str) -> Optional[str]:
         return profile.get("marketValue")
     except Exception:
         return None
+
+
+import logging
+import time
+
+_prefetch_logger = logging.getLogger(__name__)
+
+
+def prefetch_market_values(player_names: list[str]) -> None:
+    """Busca market value de cada jogador, populando o cache interno.
+
+    Chamadas que já estão em cache são ignoradas automaticamente
+    (search_player e get_player_profile já fazem cache via _cached_get).
+    Erros individuais são silenciados — o objetivo é popular o cache,
+    não garantir 100% de cobertura.
+    """
+    _prefetch_logger.info("Prefetch market values: %d jogadores", len(player_names))
+    fetched = 0
+    errors = 0
+    for name in player_names:
+        try:
+            get_player_market_value(name)
+            fetched += 1
+        except Exception:
+            errors += 1
+        time.sleep(0.1)  # cortesia com a API — 10 req/s max
+    _prefetch_logger.info(
+        "Prefetch market values concluído: %d ok, %d erros", fetched, errors
+    )
