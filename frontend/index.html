@@ -1044,11 +1044,6 @@ function benchItem(p, i) {
 }
 
 // ── sidebar toggle ────────────────────────────────────────────────────────
-function toggleGarimpoInfo() {
-  const box = document.getElementById('garimpo-info-box');
-  if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
-}
-
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebar-overlay').classList.toggle('open');
@@ -1161,18 +1156,19 @@ async function loadGarimpo(container, position = 'Todos') {
       </div>
       <div class="ranking-filters" style="margin-top:4px;margin-bottom:16px">
         ${MB_POSITIONS.map(p => `<button class="ranking-filter-btn ${p === position ? 'active' : ''}" onclick="loadGarimpo(document.getElementById('ranking-page'), '${p}')">${p}</button>`).join('')}
-        <span style="font-size:11px;color:var(--text-muted);margin-left:8px">z-score dual · performance vs. preço</span>
-        <span style="position:relative;display:inline-block;margin-left:6px">
-          <span id="garimpo-info-btn" style="cursor:pointer;font-size:12px;color:var(--text-muted);border:1px solid var(--border);border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center" onclick="toggleGarimpoInfo()">ℹ</span>
-          <div id="garimpo-info-box" style="display:none;position:absolute;top:24px;left:0;width:320px;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;color:var(--text-secondary);line-height:1.6;z-index:50">
-            <strong style="color:var(--text-primary);display:block;margin-bottom:6px">Como funciona o Garimpo?</strong>
-            O Garimpo usa z-score dual para encontrar jogadores cujo preço de mercado não reflete a performance real — inspirado no Moneyball. Ele compara o quanto cada jogador performa acima da média do grupo com o quanto ele custa acima da média, usando escala logarítmica no valor de mercado.
-            <br><br>
-            <strong>Garimpo positivo alto (+1.5 ou mais):</strong> o mercado está subestimando esse jogador.<br>
-            <strong>Garimpo próximo de zero:</strong> preço e performance estão alinhados.<br>
-            <strong>Garimpo negativo:</strong> o jogador está supervalorizado pelo mercado.
-          </div>
-        </span>
+      </div>
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:12px;line-height:1.7;color:var(--text-secondary)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:16px">⛏️</span>
+          <strong style="color:var(--text-primary);font-size:13px">Garimpo — inspirado no Moneyball</strong>
+        </div>
+        Encontra jogadores cujo preço não reflete a performance real. O índice compara o quanto cada jogador <strong style="color:var(--text-primary)">performa acima da média</strong> com o quanto ele <strong style="color:var(--text-primary)">custa acima da média</strong> do grupo, usando escala logarítmica no valor de mercado.
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px">
+          <span><span style="color:var(--accent);font-weight:700">▲ +1.5</span> subvalorizado</span>
+          <span><span style="color:var(--draw);font-weight:700">● +0.5</span> boa relação</span>
+          <span><span style="color:var(--text-secondary);font-weight:700">● ~0</span> preço justo</span>
+          <span><span style="color:var(--loss);font-weight:700">▼ negativo</span> supervalorizado</span>
+        </div>
       </div>
       <div id="ranking-body"><div class="ranking-empty">Calculando Garimpo... pode demorar alguns segundos.</div></div>
     </div>
