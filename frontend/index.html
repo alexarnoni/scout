@@ -1164,9 +1164,9 @@ async function loadGarimpo(container, position = 'Todos') {
         </div>
         Encontra jogadores cujo preço não reflete a performance real. O índice compara o quanto cada jogador <strong style="color:var(--text-primary)">performa acima da média</strong> com o quanto ele <strong style="color:var(--text-primary)">custa acima da média</strong> do grupo, usando escala logarítmica no valor de mercado.
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px">
-          <span><span style="color:var(--accent);font-weight:700">▲ +1.5</span> subvalorizado</span>
-          <span><span style="color:var(--draw);font-weight:700">● +0.5</span> boa relação</span>
-          <span><span style="color:var(--text-secondary);font-weight:700">● ~0</span> preço justo</span>
+          <span><span style="color:#22c55e;font-weight:700">▲ +1.5</span> subvalorizado</span>
+          <span><span style="color:#4ade80;font-weight:700">● +0.5</span> boa relação</span>
+          <span><span style="color:#9ca3af;font-weight:700">● ~0</span> preço justo</span>
           <span><span style="color:#ef4444;font-weight:700">▼ negativo</span> supervalorizado</span>
         </div>
       </div>
@@ -1199,7 +1199,7 @@ async function loadGarimpo(container, position = 'Todos') {
     const rows = players.map((p, i) => {
       const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
       const g = p.garimpo_score;
-      const gColor = g >= 1.5 ? 'var(--accent)' : g >= 0.5 ? 'var(--draw)' : g < 0 ? 'var(--loss)' : 'var(--text-secondary)';
+      const gColor = g >= 1.5 ? '#22c55e' : g >= 0.5 ? '#4ade80' : g >= 0 ? '#9ca3af' : g >= -1 ? '#f87171' : '#ef4444';
       const gDisplay = g > 0 ? '+' + g.toFixed(2) : g.toFixed(2);
       const posLabel = p.position_group || '';
       return `<tr>
