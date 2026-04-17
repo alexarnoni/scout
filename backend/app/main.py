@@ -71,6 +71,7 @@ from app.providers.sportdb import (
     get_season_fixtures,
 )
 from app.schemas.scout import PlayerScoutCard, ScoutRanking
+from app.providers.market_value_cache import get_cached_market_value, set_cached_market_value
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -1183,7 +1184,11 @@ def scout_moneyball(
 
     # Busca valor de mercado para TODOS os jogadores do grupo (não só top 20)
     for p in ranking:
-        mv_str = get_player_market_value(p["player_name"])
+        mv_str = get_cached_market_value(p["player_name"])
+        if mv_str is None:
+            mv_str = get_player_market_value(p["player_name"])
+            if mv_str is not None:
+                set_cached_market_value(p["player_name"], mv_str)
         mv_num = None
         if mv_str and re.search(r'[€$MmKk]', mv_str):
             try:
