@@ -66,6 +66,8 @@ a { color: inherit; text-decoration: none; }
 }
 .nav-btn:hover { background: var(--border); color: var(--text-primary); }
 .nav-btn.active { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+.copa-nav-btn { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); text-decoration: none; }
+.copa-nav-btn:hover { background: #2a1a0a; color: var(--accent); }
 
 /* ── LAYOUT ── */
 #app { display: flex; height: calc(100vh - 45px); overflow: hidden; }
@@ -386,6 +388,7 @@ svg#field { display: block; width: 100%; height: auto; }
     <button class="nav-btn active" onclick="showPage('teams')">Times</button>
     <button class="nav-btn" onclick="showPage('ranking')">Ranking</button>
     <button class="nav-btn" onclick="showPage('about')">Sobre</button>
+    <a href="/copa" class="nav-btn copa-nav-btn">Copa 2026 🏆</a>
   </nav>
 </header>
 
