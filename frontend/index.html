@@ -69,6 +69,32 @@ a { color: inherit; text-decoration: none; }
 .copa-nav-btn { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); text-decoration: none; }
 .copa-nav-btn:hover { background: #2a1a0a; color: var(--accent); }
 
+/* Controle de visibilidade por breakpoint */
+.nav-hide-mobile { display: flex; }
+.nav-show-mobile { display: none; }
+
+/* Dropdown wrapper */
+.nav-more-wrap { position: relative; }
+.nav-more-btn { font-size: 18px; letter-spacing: 1px; padding: 3px 10px; line-height: 1; }
+.nav-dropdown {
+  display: none; position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 8px; min-width: 150px; z-index: 200;
+  overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.nav-dropdown.open { display: block; }
+.nav-dropdown-item {
+  display: block; width: 100%; background: none; border: none;
+  border-bottom: 1px solid var(--border-light); color: var(--text-secondary);
+  font-size: 13px; font-family: 'Barlow', sans-serif; padding: 10px 16px;
+  text-align: left; cursor: pointer; text-decoration: none;
+  transition: background .12s, color .12s;
+}
+.nav-dropdown-item:last-child { border-bottom: none; }
+.nav-dropdown-item:hover { background: rgba(255,255,255,.05); color: var(--text-primary); }
+.copa-dropdown-item { color: var(--accent); }
+.copa-dropdown-item:hover { background: var(--accent-dim); color: var(--accent); }
+
 /* ── LAYOUT ── */
 #app { display: flex; height: calc(100vh - 45px); overflow: hidden; }
 #sidebar {
@@ -245,6 +271,8 @@ svg#field { display: block; width: 100%; height: auto; }
   .results-row { gap: 5px; }
   .result-pill { padding: 5px 10px; font-size: 12px; }
   .result-pill .opp { max-width: 50px; }
+  .nav-hide-mobile { display: none !important; }
+  .nav-show-mobile { display: flex; }
 }
 @media (min-width: 768px) { #mobile-select-wrap { display: none; } .sidebar-search { display: block; } }
 
@@ -386,9 +414,17 @@ svg#field { display: block; width: 100%; height: auto; }
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
   <nav class="header-nav">
     <button class="nav-btn active" onclick="showPage('teams')">Times</button>
-    <button class="nav-btn" onclick="showPage('ranking')">Ranking</button>
-    <button class="nav-btn" onclick="showPage('about')">Sobre</button>
-    <a href="/copa" class="nav-btn copa-nav-btn">Copa 2026 🏆</a>
+    <button class="nav-btn nav-hide-mobile" onclick="showPage('ranking')">Ranking</button>
+    <button class="nav-btn nav-hide-mobile" onclick="showPage('about')">Sobre</button>
+    <a href="/copa" class="nav-btn nav-hide-mobile copa-nav-btn">Copa 2026 🏆</a>
+    <div class="nav-more-wrap nav-show-mobile">
+      <button class="nav-btn nav-more-btn" onclick="toggleNavMore()" aria-label="Mais opções">⋯</button>
+      <div class="nav-dropdown" id="nav-dropdown">
+        <button class="nav-dropdown-item" onclick="showPage('ranking'); closeNavMore()">Ranking</button>
+        <button class="nav-dropdown-item" onclick="showPage('about'); closeNavMore()">Sobre</button>
+        <a href="/copa" class="nav-dropdown-item copa-dropdown-item">Copa 2026 🏆</a>
+      </div>
+    </div>
   </nav>
 </header>
 
@@ -1051,6 +1087,21 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebar-overlay').classList.toggle('open');
 }
+
+function toggleNavMore() {
+  document.getElementById('nav-dropdown').classList.toggle('open');
+}
+
+function closeNavMore() {
+  document.getElementById('nav-dropdown').classList.remove('open');
+}
+
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.nav-more-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    closeNavMore();
+  }
+});
 
 // ── page navigation ───────────────────────────────────────────────────────
 async function showPage(page) {
