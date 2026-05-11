@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Olheiro · Copa 2026</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23ea580c'/><circle cx='16' cy='9' r='3.5' fill='%23f5f0ea'/><path d='M7 25 L16 9 L25 25' stroke='%23f5f0ea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #060e1c;
+  --bg-mid: #0a1628;
+  --bg-panel: #0d1e35;
+  --bg-card: #0f2040;
+  --border: #1a2a45;
+  --border-light: #0f1e30;
+  --text-primary: #f5f0ea;
+  --text-secondary: #c8c0b8;
+  --text-muted: #7a99bb;
+  --accent: #ea580c;
+  --accent-dim: #1e1208;
+  --accent-border: #3d2010;
+  --gk: #ea580c;
+  --def: #60a5fa;
+  --mid: #a78bfa;
+  --fwd: #fb923c;
+  --positive: #4ade80;
+  --negative: #f87171;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg-mid);
+  color: var(--text-primary);
+  font-family: 'Barlow', system-ui, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+}
+#copa-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+#copa-header {
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+  padding: 9px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 44px;
+}
+.header-brand { display: flex; align-items: center; gap: 8px; }
+.header-logo-mark {
+  width: 22px; height: 22px; background: var(--accent);
+  border-radius: 5px; display: flex; align-items: center; justify-content: center;
+}
+.header-brand-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px; font-weight: 800; color: var(--text-primary);
+}
+.header-brand-divider { width: 1px; height: 13px; background: var(--border); }
+.header-brand-season { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+.back-btn {
+  font-size: 11px; color: var(--text-muted); background: none;
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 10px; text-decoration: none;
+  transition: color .15s, border-color .15s;
+}
+.back-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
+#copa-banner {
+  background: var(--bg-mid);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.banner-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px; font-weight: 800; color: var(--text-primary);
+  display: block;
+}
+.banner-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: block; }
+.countdown-wrap { display: flex; gap: 8px; }
+.cd-unit {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px; text-align: center; min-width: 44px;
+}
+.cd-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px; font-weight: 800; color: var(--accent); line-height: 1;
+}
+.cd-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+#copa-nav {
+  display: flex; gap: 2px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-mid);
+  flex-shrink: 0;
+}
+.copa-tab {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--text-muted); font-size: 12px; font-weight: 500;
+  padding: 8px 14px; cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.copa-tab:hover { color: var(--text-primary); }
+.copa-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+#copa-body { display: flex; flex: 1; overflow: hidden; }
+#groups-view { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.groups-section-label {
+  font-size: 10px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 12px;
+}
+.groups-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.group-card {
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; cursor: pointer;
+  transition: border-color .15s;
+}
+.group-card:hover { border-color: #2a4a6a; }
+.group-card.selected { border-color: var(--accent); }
+.group-head {
+  background: var(--bg-card);
+  padding: 5px 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 800; color: var(--text-muted);
+  letter-spacing: .04em;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.group-head-cols { font-size: 9px; color: var(--border); }
+.team-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer; transition: background .12s;
+}
+.team-row:last-child { border-bottom: none; }
+.team-row:hover { background: rgba(255,255,255,.04); }
+.team-flag { font-size: 14px; line-height: 1; }
+.team-name-text { font-size: 11px; color: var(--text-secondary); flex: 1; }
+.team-pts { font-size: 11px; color: var(--text-muted); font-weight: 600; width: 14px; text-align: right; }
+#copa-drawer {
+  width: 0; background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: width .2s ease;
+  flex-shrink: 0;
+}
+#copa-drawer.open { width: 265px; }
+.drawer-head {
+  background: var(--bg-card); border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.drawer-flag { font-size: 28px; line-height: 1; }
+.drawer-head-info { flex: 1; }
+.drawer-country {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px; font-weight: 800; color: var(--text-primary);
+  display: block;
+}
+.drawer-group { font-size: 10px; color: var(--text-muted); display: block; margin-top: 1px; }
+.drawer-close {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 16px; cursor: pointer; padding: 2px 6px;
+  border-radius: 4px; transition: color .15s, background .15s;
+}
+.drawer-close:hover { color: var(--text-primary); background: var(--border); }
+.drawer-body { flex: 1; overflow-y: auto; padding: 12px; }
+.drawer-section { margin-bottom: 18px; }
+.drawer-section-title {
+  font-size: 9px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-bottom: 8px;
+}
+.pos-group { margin-bottom: 10px; }
+.pos-label {
+  font-size: 9px; font-weight: 700;
+  padding: 1px 6px; border-radius: 4px;
+  display: inline-block; margin-bottom: 4px;
+}
+.pos-gk  { background: rgba(234,88,12,.15);  color: var(--gk);  }
+.pos-def { background: rgba(96,165,250,.15);  color: var(--def); }
+.pos-mid { background: rgba(167,139,250,.15); color: var(--mid); }
+.pos-fwd { background: rgba(251,146,60,.15);  color: var(--fwd); }
+.player-row { font-size: 11px; color: var(--text-secondary); padding: 2px 0; }
+.player-club { font-size: 10px; color: var(--text-muted); margin-left: 4px; }
+.fixture-card {
+  background: var(--bg-mid); border: 1px solid var(--border);
+  border-radius: 6px; padding: 7px 10px; margin-bottom: 6px;
+}
+.fixture-date { font-size: 9px; color: var(--text-muted); margin-bottom: 2px; }
+.fixture-teams { font-size: 11px; color: var(--text-primary); font-weight: 600; }
+.fixture-venue { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.drawer-empty {
+  color: var(--text-muted); font-size: 11px;
+  text-align: center; padding: 12px 0;
+}
+.team-view-header {
+  background: var(--bg-card); border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.team-view-back {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text-muted); font-size: 11px; padding: 4px 10px; cursor: pointer;
+}
+.team-view-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 800; color: var(--text-primary);
+}
+.team-view-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
+@media (max-width: 767px) {
+  .groups-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  #copa-drawer { display: none; }
+  #copa-banner { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .countdown-wrap { gap: 6px; }
+  #groups-view { padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div id="copa-root">
+<header id="copa-header">
+  <div class="header-brand">
+    <div class="header-logo-mark">
+      <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="8" r="3.5" fill="#f5f0ea"/>
+        <path d="M6 24 L16 8 L26 24" stroke="#f5f0ea" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+    <span class="header-brand-name">Olheiro</span>
+    <div class="header-brand-divider"></div>
+    <span class="header-brand-season">Copa 2026</span>
+  </div>
+  <a href="/" class="back-btn">← Olheiro</a>
+</header>
+<div id="copa-banner">
+  <div class="banner-left">
+    <span class="banner-title">🏆 Copa do Mundo 2026</span>
+    <span class="banner-sub">EUA · México · Canadá &nbsp;·&nbsp; 11 jun – 19 jul</span>
+  </div>
+  <div class="countdown-wrap">
+    <div class="cd-unit"><div class="cd-num" id="cd-d">--</div><div class="cd-label">dias</div></div>
+    <div class="cd-unit"><div class="cd-num" id="cd-h">--</div><div class="cd-label">horas</div></div>
+    <div class="cd-unit"><div class="cd-num" id="cd-m">--</div><div class="cd-label">min</div></div>
+  </div>
+</div>
+<nav id="copa-nav">
+  <button class="copa-tab active" onclick="showTab('grupos')">Grupos</button>
+  <button class="copa-tab" onclick="showTab('jogos')">Jogos</button>
+  <button class="copa-tab" onclick="showTab('chaveamento')">Chaveamento</button>
+</nav>
+<div id="copa-body">
+  <div id="groups-view">
+    <div class="groups-section-label">Fase de Grupos</div>
+    <div class="groups-grid" id="groups-grid"></div>
+  </div>
+  <div id="team-view" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+    <div class="team-view-header">
+      <button onclick="backToGroups()" class="team-view-back">← Grupos</button>
+      <span class="team-view-title" id="tv-title"></span>
+    </div>
+    <div class="team-view-body" id="tv-body"></div>
+  </div>
+  <div id="jogos-view" style="display:none; flex:1; align-items:center; justify-content:center;">
+    <div style="text-align:center; color:var(--text-muted); padding:40px;">
+      <div style="font-size:32px; margin-bottom:12px;">📅</div>
+      <div style="font-size:14px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Jogos</div>
+      <div style="font-size:12px;">Disponível quando a Copa começar</div>
+    </div>
+  </div>
+  <div id="chaveamento-view" style="display:none; flex:1; align-items:center; justify-content:center;">
+    <div style="text-align:center; color:var(--text-muted); padding:40px;">
+      <div style="font-size:32px; margin-bottom:12px;">🏆</div>
+      <div style="font-size:14px; font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Chaveamento</div>
+      <div style="font-size:12px;">Disponível após a fase de grupos</div>
+    </div>
+  </div>
+  <div id="copa-drawer">
+    <div class="drawer-head">
+      <span class="drawer-flag" id="d-flag"></span>
+      <div class="drawer-head-info">
+        <span class="drawer-country" id="d-country"></span>
+        <span class="drawer-group" id="d-group"></span>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()" aria-label="Fechar">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </div>
+</div>
+</div>
+
+<script>
+const GROUPS = [
+  { id: 'A', teams: [
+    { flag: '🇺🇸', name: 'Estados Unidos' },
+    { flag: '🇵🇦', name: 'Panamá' },
+    { flag: '🇲🇽', name: 'México' },
+    { flag: '🇷🇸', name: 'Sérvia' },
+  ]},
+  { id: 'B', teams: [
+    { flag: '🇦🇷', name: 'Argentina' },
+    { flag: '🇨🇱', name: 'Chile' },
+    { flag: '🇵🇪', name: 'Peru' },
+    { flag: '🇦🇺', name: 'Austrália' },
+  ]},
+  { id: 'C', teams: [
+    { flag: '🇧🇷', name: 'Brasil' },
+    { flag: '🇩🇪', name: 'Alemanha' },
+    { flag: '🇯🇵', name: 'Japão' },
+    { flag: '🇨🇮', name: 'Costa do Marfim' },
+  ]},
+  { id: 'D', teams: [
+    { flag: '🇫🇷', name: 'França' },
+    { flag: '🇲🇦', name: 'Marrocos' },
+    { flag: '🇧🇪', name: 'Bélgica' },
+    { flag: '🇿🇦', name: 'África do Sul' },
+  ]},
+  { id: 'E', teams: [
+    { flag: '🇪🇸', name: 'Espanha' },
+    { flag: '🇳🇱', name: 'Holanda' },
+    { flag: '🇸🇳', name: 'Senegal' },
+    { flag: '🇳🇿', name: 'Nova Zelândia' },
+  ]},
+  { id: 'F', teams: [
+    { flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', name: 'Inglaterra' },
+    { flag: '🇵🇹', name: 'Portugal' },
+    { flag: '🇲🇽', name: 'México' },
+    { flag: '🇰🇪', name: 'Quênia' },
+  ]},
+  { id: 'G', teams: [
+    { flag: '🇺🇾', name: 'Uruguai' },
+    { flag: '🇨🇴', name: 'Colômbia' },
+    { flag: '🇰🇷', name: 'Coreia do Sul' },
+    { flag: '🇬🇭', name: 'Gana' },
+  ]},
+  { id: 'H', teams: [
+    { flag: '🇵🇹', name: 'Portugal' },
+    { flag: '🇭🇷', name: 'Croácia' },
+    { flag: '🇹🇳', name: 'Tunísia' },
+    { flag: '🇸🇦', name: 'Arábia Saudita' },
+  ]},
+  { id: 'I', teams: [
+    { flag: '🇩🇰', name: 'Dinamarca' },
+    { flag: '🇨🇦', name: 'Canadá' },
+    { flag: '🇦🇹', name: 'Áustria' },
+    { flag: '🇦🇴', name: 'Angola' },
+  ]},
+  { id: 'J', teams: [
+    { flag: '🇨🇭', name: 'Suíça' },
+    { flag: '🇵🇱', name: 'Polônia' },
+    { flag: '🇪🇨', name: 'Equador' },
+    { flag: '🇮🇶', name: 'Iraque' },
+  ]},
+  { id: 'K', teams: [
+    { flag: '🇹🇷', name: 'Turquia' },
+    { flag: '🇺🇦', name: 'Ucrânia' },
+    { flag: '🇨🇲', name: 'Camarões' },
+    { flag: '🇹🇭', name: 'Tailândia' },
+  ]},
+  { id: 'L', teams: [
+    { flag: '🇮🇷', name: 'Irã' },
+    { flag: '🇸🇪', name: 'Suécia' },
+    { flag: '🇲🇱', name: 'Mali' },
+    { flag: '🇵🇾', name: 'Paraguai' },
+  ]},
+];
+
+const TEAM_MOCK = {
+  'Brasil': {
+    squad: {
+      gk:  [{ name: 'Alisson', club: 'Liverpool' }, { name: 'Ederson', club: 'Man City' }, { name: 'Bento', club: 'Al-Nassr' }],
+      def: [{ name: 'Marquinhos', club: 'PSG' }, { name: 'Militão', club: 'Real Madrid' }, { name: 'Danilo', club: 'Juventus' }, { name: 'Alex Telles', club: 'Sevilla' }],
+      mid: [{ name: 'Bruno Guimarães', club: 'Newcastle' }, { name: 'Paquetá', club: 'West Ham' }, { name: 'Gerson', club: 'Flamengo' }, { name: 'Andrey Santos', club: 'Chelsea' }],
+      fwd: [{ name: 'Vinícius Jr', club: 'Real Madrid' }, { name: 'Rodrygo', club: 'Real Madrid' }, { name: 'Endrick', club: 'Real Madrid' }, { name: 'Raphinha', club: 'Barcelona' }],
+    },
+    fixtures: [
+      { date: '12 jun · 16h BRT', opponent: 'Alemanha 🇩🇪', venue: 'MetLife Stadium · New Jersey' },
+      { date: '17 jun · 19h BRT', opponent: 'Costa do Marfim 🇨🇮', venue: 'SoFi Stadium · Los Angeles' },
+      { date: '22 jun · 22h BRT', opponent: 'Japão 🇯🇵', venue: 'AT&T Stadium · Dallas' },
+    ],
+  }
+};
+
+function renderGroups() {
+  const grid = document.getElementById('groups-grid');
+  grid.innerHTML = GROUPS.map(g => `
+    <div class="group-card" id="gc-${g.id}">
+      <div class="group-head">
+        <span>GRUPO ${g.id}</span>
+        <span class="group-head-cols">PJ V E D Pts</span>
+      </div>
+      ${g.teams.map(t => `
+        <div class="team-row" onclick="selectTeam('${t.flag}', '${t.name.replace(/'/g, "\\'")}', '${g.id}')">
+          <span class="team-flag">${t.flag}</span>
+          <span class="team-name-text">${t.name}</span>
+          <span class="team-pts">0</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function computeCountdown(now, target) {
+  const diff = target - now;
+  if (diff <= 0) return null;
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  return { days, hours, minutes };
+}
+
+function updateCountdown() {
+  const target = new Date('2026-06-11T19:00:00Z');
+  const result = computeCountdown(new Date(), target);
+  if (!result) {
+    document.getElementById('cd-d').textContent = '0';
+    document.getElementById('cd-h').textContent = '00';
+    document.getElementById('cd-m').textContent = '00';
+    return;
+  }
+  document.getElementById('cd-d').textContent = result.days;
+  document.getElementById('cd-h').textContent = String(result.hours).padStart(2, '0');
+  document.getElementById('cd-m').textContent = String(result.minutes).padStart(2, '0');
+}
+
+let selectedTeamName = null;
+
+function buildDrawerContent(teamName) {
+  const data = TEAM_MOCK[teamName];
+
+  const squadHTML = data
+    ? `
+      <div class="pos-group">
+        <span class="pos-label pos-gk">GOL</span>
+        ${data.squad.gk.map(p => `<div class="player-row">${p.name}<span class="player-club">· ${p.club}</span></div>`).join('')}
+      </div>
+      <div class="pos-group">
+        <span class="pos-label pos-def">DEF</span>
+        ${data.squad.def.map(p => `<div class="player-row">${p.name}<span class="player-club">· ${p.club}</span></div>`).join('')}
+      </div>
+      <div class="pos-group">
+        <span class="pos-label pos-mid">MEI</span>
+        ${data.squad.mid.map(p => `<div class="player-row">${p.name}<span class="player-club">· ${p.club}</span></div>`).join('')}
+      </div>
+      <div class="pos-group">
+        <span class="pos-label pos-fwd">ATA</span>
+        ${data.squad.fwd.map(p => `<div class="player-row">${p.name}<span class="player-club">· ${p.club}</span></div>`).join('')}
+      </div>`
+    : '<div class="drawer-empty">Elenco ainda não anunciado</div>';
+
+  const fixturesHTML = data
+    ? data.fixtures.map(f => `
+        <div class="fixture-card">
+          <div class="fixture-date">${f.date}</div>
+          <div class="fixture-teams">🇧🇷 Brasil vs ${f.opponent}</div>
+          <div class="fixture-venue">${f.venue}</div>
+        </div>`).join('')
+    : '<div class="drawer-empty">Agenda a confirmar</div>';
+
+  return `
+    <div class="drawer-section">
+      <div class="drawer-section-title">👕 Convocados</div>
+      ${squadHTML}
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">📅 Próximos jogos</div>
+      ${fixturesHTML}
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">📊 Resultados</div>
+      <div class="drawer-empty">Copa ainda não começou</div>
+    </div>
+  `;
+}
+
+function selectTeam(flag, name, group) {
+  selectedTeamName = name;
+  document.getElementById('d-flag').textContent = flag;
+  document.getElementById('d-country').textContent = name;
+  document.getElementById('d-group').textContent = `Grupo ${group}`;
+  document.getElementById('drawer-body').innerHTML = buildDrawerContent(name);
+
+  if (window.innerWidth >= 768) {
+    document.getElementById('copa-drawer').classList.add('open');
+  } else {
+    showMobileTeam(flag, name, group);
+  }
+}
+
+function closeDrawer() {
+  document.getElementById('copa-drawer').classList.remove('open');
+  selectedTeamName = null;
+}
+
+function showMobileTeam(flag, name, group) {
+  document.getElementById('groups-view').style.display = 'none';
+  const tv = document.getElementById('team-view');
+  tv.style.display = 'flex';
+  document.getElementById('tv-title').textContent = `${flag} ${name}`;
+  document.getElementById('tv-body').innerHTML = buildDrawerContent(name);
+}
+
+function backToGroups() {
+  document.getElementById('team-view').style.display = 'none';
+  document.getElementById('groups-view').style.display = 'block';
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.copa-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="showTab('${tab}')"]`).classList.add('active');
+
+  const views = { grupos: 'groups-view', jogos: 'jogos-view', chaveamento: 'chaveamento-view' };
+  Object.values(views).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // Also hide team-view when switching tabs
+  const tv = document.getElementById('team-view');
+  if (tv) tv.style.display = 'none';
+  
+  const target = document.getElementById(views[tab]);
+  if (target) target.style.display = tab === 'grupos' ? 'block' : 'flex';
+}
+
+updateCountdown();
+setInterval(updateCountdown, 30000);
+renderGroups();
+showTab('grupos');
+</script>
+</body>
+</html>
