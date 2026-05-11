@@ -304,6 +304,58 @@ html, body {
   .countdown-wrap { gap: 6px; }
   #groups-view { padding: 12px; }
 }
+#copa-ticker {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  height: 32px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ticker-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 0 12px;
+  white-space: nowrap;
+  border-right: 1px solid var(--border);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.ticker-track-wrap {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+.ticker-track {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  animation: ticker-scroll 80s linear infinite;
+}
+.ticker-track:hover { animation-play-state: paused; }
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-item {
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 0 32px;
+  flex-shrink: 0;
+}
+.ticker-item::before {
+  content: '·';
+  color: var(--accent);
+  margin-right: 32px;
+  font-size: 14px;
+}
 #copa-footer {
   padding: 10px 20px;
   border-top: 1px solid var(--border);
@@ -349,6 +401,12 @@ img.emoji {
     <div class="cd-unit"><div class="cd-num" id="cd-d">--</div><div class="cd-label">dias</div></div>
     <div class="cd-unit"><div class="cd-num" id="cd-h">--</div><div class="cd-label">horas</div></div>
     <div class="cd-unit"><div class="cd-num" id="cd-m">--</div><div class="cd-label">min</div></div>
+  </div>
+</div>
+<div id="copa-ticker">
+  <div class="ticker-label">SABIA QUE</div>
+  <div class="ticker-track-wrap">
+    <div class="ticker-track" id="ticker-track"></div>
   </div>
 </div>
 <nav id="copa-nav">
@@ -726,8 +784,29 @@ function renderBracket() {
   }
 }
 
+async function loadTicker() {
+  try {
+    const res = await fetch('./copa.json');
+    const data = await res.json();
+    const items = data.ticker || [];
+    if (!items.length) return;
+    const track = document.getElementById('ticker-track');
+    track.innerHTML = [...items, ...items].map(item =>
+      `<span class="ticker-item">${item}</span>`
+    ).join('');
+    track.style.animationDuration = (items.length * 4) + 's';
+    if (typeof twemoji !== 'undefined') {
+      twemoji.parse(track, { folder: 'svg', ext: '.svg', base: 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/' });
+    }
+  } catch(e) {
+    const el = document.getElementById('copa-ticker');
+    if (el) el.style.display = 'none';
+  }
+}
+
 renderGroups();
 renderBracket();
+loadTicker();
 updateCountdown();
 setInterval(updateCountdown, 30000);
 showTab('grupos');
