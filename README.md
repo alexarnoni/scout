@@ -1,5 +1,7 @@
 # Olheiro — Análise de Dados · Brasileirão Série A 2026
 
+> Status: sincronização com a API SportDB pausada por custo da API. O código e os dados já coletados continuam disponíveis.
+
 <p align="center">
   <img src="https://img.shields.io/badge/status-live-4ade80?style=flat-square" alt="Status" />
   <img src="https://img.shields.io/badge/temporada-Brasileirão%202026-ea580c?style=flat-square" alt="Temporada" />
